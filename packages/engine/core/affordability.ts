@@ -6,18 +6,25 @@ export function calcTimeToAfford(current: number, target: number, rate: number):
   return (target - current) / rate;
 }
 
+export interface AffordLabels {
+  needIncome: string;
+  afterQuest: string;
+  earnSuffix: string;
+}
+
 export function formatAffordHint(
   current: number,
   target: number,
   rate: number,
+  labels: AffordLabels,
   options?: { onQuest?: boolean; earnBased?: boolean },
 ): string {
   if (current >= target) return '';
-  if (rate <= 0) return 'Gelir gerekli';
+  if (rate <= 0) return labels.needIncome;
   const sec = calcTimeToAfford(current, target, rate)!;
-  const prefix = options?.onQuest ? 'Görev sonrası ~' : '~';
-  const label = options?.earnBased ? 'kazanım' : '';
-  return `${prefix}${formatTime(sec)}${label ? ` ${label}` : ''}`;
+  const prefix = options?.onQuest ? labels.afterQuest : '~';
+  const suffix = options?.earnBased ? ` ${labels.earnSuffix}` : '';
+  return `${prefix}${formatTime(sec)}${suffix}`;
 }
 
 export interface PurchaseOption {

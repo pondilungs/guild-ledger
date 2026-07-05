@@ -1,37 +1,536 @@
 import type { GameEngine } from '../GameEngine.ts';
 import { formatNumber, formatTime } from '../core/format.ts';
 import { formatAffordHint, pickNextPurchase, type PurchaseOption } from '../core/affordability.ts';
-import { TutorialManager, type TutorialStep } from '../core/TutorialManager.ts';
+import { TutorialManager } from '../core/TutorialManager.ts';
 import { renderTutorialOverlay, applyTutorialHighlight } from './TutorialOverlay.ts';
 import { calcPartyCost, calcUpgradeCost } from '../systems/CombatSystem.ts';
 import { canUnlockZone } from '../systems/ZoneSystem.ts';
 import { canPrestige, calcPrestigePoints } from '../systems/PrestigeSystem.ts';
+import type { LocaleManager, LocaleId } from '../core/LocaleManager.ts';
+import type { GameLocale } from '../i18n/types.ts';
+import type { GameState } from '../core/types.ts';
+import type { ThemeConfig } from '../config/ThemeSchema.ts';
+import type { ClickBoostStatus } from '../systems/ClickBoostSystem.ts';
 
-function affordHint(
+export interface GameUIOptions {
+  localeManager: LocaleManager;
+  getLocale: () => GameLocale;
+  getDisplayUsername: () => string;
+}
+
+interface RenderContext {
+  engine: GameEngine;
+  state: GameState;
+  theme: ThemeConfig;
+  locale: GameLocale;
+  ui: GameLocale['ui'];
+  baseGps: number;
+  gps: number;
+  clickStatus: ClickBoostStatus;
+  onQuest: boolean;
+  nextBuyId: string | null;
+  currentLocale: LocaleId;
+  tutorial: TutorialManager;
+  displayUsername: string;
+}
+
+function affordHintText(
   current: number,
   cost: number,
   gps: number,
+  ui: GameLocale['ui'],
   onQuest: boolean,
   earnBased = false,
 ): string {
-  const hint = formatAffordHint(current, cost, gps, { onQuest, earnBased });
-  return hint ? `<span class="afford-hint">${hint}</span>` : '';
+  return formatAffordHint(current, cost, gps, ui, { onQuest, earnBased });
+}
+
+function affordHintHtml(
+  current: number,
+  cost: number,
+  gps: number,
+  ui: GameLocale['ui'],
+  onQuest: boolean,
+  affordKey: string,
+  earnBased = false,
+): string {
+  const text = affordHintText(current, cost, gps, ui, onQuest, earnBased);
+  return text ? `<span class="afford-hint" data-afford="${affordKey}">${text}</span>` : `<span class="afford-hint" data-afford="${affordKey}"></span>`;
+}
+
+function computeStructureKey(ctx: RenderContext): string {
+  const { state, theme, engine, tutorial, baseGps, currentLocale } = ctx;
+  return [
+    currentLocale,
+    ctx.displayUsername,
+    !!engine.offlineEarnings,
+    !!state.activeQuest,
+    baseGps > 0,
+    state.prestigePoints > 0,
+    state.currentZoneId,
+    state.unlockedZones.join(','),
+    state.parties.map((p) => p.level).join(','),
+    state.upgrades.map((u) => `${u.id}:${u.level}`).join(','),
+    canPrestige(state, theme),
+    tutorial.active ? tutorial.current?.id ?? '' : 'off',
+    engine.eventLog.length,
+    state.parties.some((p) => p.level > 0) ? 1 : 0,
+    theme.partySlots.map((def) => (state.unlockedZones.includes(def.unlockZone) ? 1 : 0)).join(''),
+    theme.zones.map((z) => (state.unlockedZones.includes(z.id) ? 1 : 0)).join(''),
+  ].join('|');
+}
+
+function buildHTML(ctx: RenderContext): string {
+  const { engine, state, theme, locale, ui, baseGps, gps, clickStatus, onQuest, nextBuyId, currentLocale, tutorial } = ctx;
+  const prestigePts = calcPrestigePoints(state, theme);
+  const quest = state.activeQuest;
+  const zone = theme.zones.find((z) => z.id === state.currentZoneId)!;
+  const zoneLoc = locale.zones[zone.id];
+  const clickConfig = theme.clickBoost ?? { multiplier: 2, durationSec: 30, cooldownSec: 30, tapGoldFactor: 0.08 };
+  const prestigeReady = canPrestige(state, theme);
+
+  return `
+    <div data-game-shell>
+      <header class="header">
+        <div class="brand">
+          <span class="brand-icon">📒</span>
+          <div>
+            <h1>${theme.title}</h1>
+            <p class="tagline">${locale.tagline}</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <div class="header-top-row">
+            <div class="lang-switcher" aria-label="${ui.langLabel}">
+              <button class="lang-btn ${currentLocale === 'tr' ? 'active' : ''}" data-action="set-locale" data-locale="tr" type="button">TR</button>
+              <button class="lang-btn ${currentLocale === 'en' ? 'active' : ''}" data-action="set-locale" data-locale="en" type="button">EN</button>
+            </div>
+            <div class="social-bar">
+              <button class="btn btn-sm btn-social" data-action="open-leaderboard" type="button">🏆 ${ui.leaderboard}</button>
+              <button class="btn btn-sm btn-social profile-chip" data-action="open-profile" type="button" data-bind="username">👤 ${ctx.displayUsername}</button>
+            </div>
+          </div>
+          <div class="resources" data-tutorial-target="resources">
+            <div class="resource gold">
+              <span>🪙</span>
+              <span class="resource-value" data-bind="gold">${formatNumber(state.gold)}</span>
+              <span class="resource-rate ${clickStatus.active ? 'boosted' : ''}" data-bind="gps">+${formatNumber(gps)}/s${clickStatus.active ? ` (${clickStatus.multiplier}×)` : ''}</span>
+            </div>
+            ${baseGps > 0 ? `
+              <button
+                class="click-boost-btn ${clickStatus.active ? 'active' : ''} ${clickStatus.cooldownLeft > 0 && !clickStatus.active ? 'cooldown' : ''}"
+                data-action="click-boost"
+                type="button"
+                title="${ui.collectBoost.replace('{mult}', String(clickConfig.multiplier))}"
+              >
+                <span class="click-boost-icon">💰</span>
+                <span class="click-boost-label" data-bind="click-boost-label">
+                  ${clickStatus.active
+                    ? `${clickStatus.multiplier}× ${formatTime(clickStatus.boostLeft)}`
+                    : clickStatus.cooldownLeft > 0
+                      ? formatTime(clickStatus.cooldownLeft)
+                      : ui.collect}
+                </span>
+              </button>
+            ` : ''}
+            ${state.prestigePoints > 0 ? `
+              <div class="resource prestige">
+                <span>${theme.prestige.currencyIcon}</span>
+                <span class="resource-value">${state.prestigePoints}</span>
+                <span class="resource-label">${locale.prestigeCurrency}</span>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      </header>
+
+      ${engine.offlineEarnings ? `
+        <div class="offline-banner">
+          <p>${ui.offlineEarnings}: <strong>+${formatNumber(engine.offlineEarnings.gold)}</strong> (${formatTime(engine.offlineEarnings.seconds)})</p>
+          <button class="btn btn-primary" data-action="collect-offline">${ui.collect}</button>
+        </div>
+      ` : ''}
+
+      <main class="main-grid">
+        <section class="panel zone-panel">
+          <h2>📍 ${ui.activeZone}</h2>
+          <div class="zone-current">
+            <span class="zone-icon">${zone.icon}</span>
+            <div>
+              <strong>${zoneLoc?.name ?? zone.name}</strong>
+              <p>${zoneLoc?.description ?? zone.description}</p>
+            </div>
+          </div>
+          ${quest ? `
+            <div class="quest-progress" data-tutorial-target="start-quest">
+              <div class="progress-bar">
+                <div class="progress-fill" data-bind="quest-fill" style="width: ${(quest.progress / quest.durationSec) * 100}%"></div>
+              </div>
+              <p data-bind="quest-time">${ui.questInProgress} ${formatTime(quest.durationSec - quest.progress)}</p>
+            </div>
+          ` : `
+            <button class="btn btn-accent btn-block" data-tutorial-target="start-quest" data-action="start-quest" ${state.parties.every(p => p.level === 0) ? 'disabled' : ''}>
+              ⚔️ ${ui.sendQuest}
+            </button>
+          `}
+          <div class="zone-list">
+            ${theme.zones.map((z) => {
+              const zLoc = locale.zones[z.id];
+              const unlocked = state.unlockedZones.includes(z.id);
+              const active = state.currentZoneId === z.id;
+              const zoneCanUnlock = canUnlockZone(state, z.id, theme);
+              return `
+                <div class="zone-item ${active ? 'active' : ''} ${unlocked ? '' : 'locked'}" data-zone-item="${z.id}">
+                  <span>${z.icon}</span>
+                  <span>${zLoc?.name ?? z.name}</span>
+                  ${active ? `<span class="badge">${ui.active}</span>` : ''}
+                  <span class="zone-actions" data-zone-actions="${z.id}">
+                    ${!unlocked
+                      ? `<button class="btn btn-sm ${zoneCanUnlock ? 'btn-ready' : 'disabled'}"
+                          data-action="unlock-zone" data-zone="${z.id}"
+                          ${zoneCanUnlock ? '' : 'disabled'}>
+                          ${ui.unlock} (${formatNumber(z.unlockGold)})
+                        </button>
+                        ${affordHintHtml(state.gold, z.unlockGold, baseGps, ui, onQuest, `zone:${z.id}`)}`
+                      : !active
+                        ? `<button class="btn btn-sm" data-action="select-zone" data-zone="${z.id}">${ui.select}</button>`
+                        : ''
+                    }
+                  </span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </section>
+
+        <section class="panel ledger-panel">
+          <h2>📒 ${ui.ledger}</h2>
+          <div class="ledger-log">
+            ${engine.eventLog.length === 0
+              ? `<p class="ledger-empty">${ui.ledgerEmpty}</p>`
+              : engine.eventLog.map((entry) => `
+                  <div class="ledger-entry ledger-${entry.tone}">
+                    <span class="ledger-dot"></span>
+                    <span>${entry.message}</span>
+                  </div>
+                `).join('')
+            }
+          </div>
+        </section>
+
+        <section class="panel party-panel">
+          <h2>👥 ${ui.parties}</h2>
+          <div class="item-list">
+            ${theme.partySlots.map((def) => {
+              const pLoc = locale.parties[def.id];
+              const party = state.parties.find((p) => p.id === def.id)!;
+              const unlocked = state.unlockedZones.includes(def.unlockZone);
+              const cost = calcPartyCost(def, party.level);
+              const canAfford = state.gold >= cost;
+              const isNext = nextBuyId === `party:${def.id}`;
+              return `
+                <div class="item-card ${unlocked ? '' : 'locked'} ${isNext ? 'next-buy' : ''}" data-party-card="${def.id}">
+                  <div class="item-header">
+                    <span class="item-icon">${def.icon}</span>
+                    <div>
+                      <strong>${pLoc?.name ?? def.name}</strong>
+                      <span class="item-level">Lv ${party.level}</span>
+                    </div>
+                    <span class="item-dps">${party.level > 0 ? formatNumber(def.baseDps * party.level) : '—'} DPS</span>
+                  </div>
+                  <p class="item-desc">${pLoc?.description ?? def.description}</p>
+                  ${unlocked ? `
+                    <div class="buy-row">
+                      <button class="btn btn-sm ${canAfford ? 'btn-ready' : 'disabled'}"
+                        data-tutorial-target="${def.id === 'squire' ? 'hire-squire' : ''}"
+                        data-action="hire-party" data-party="${def.id}"
+                        ${canAfford ? '' : 'disabled'}>
+                        ${ui.hire} (${formatNumber(cost)})
+                      </button>
+                      ${affordHintHtml(state.gold, cost, baseGps, ui, onQuest, `party:${def.id}`)}
+                    </div>
+                  ` : `<span class="lock-label">${ui.zoneRequired}</span>`}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </section>
+
+        <section class="panel upgrade-panel">
+          <h2>📈 ${ui.investments}</h2>
+          <div class="item-list">
+            ${theme.upgrades.map((def) => {
+              const uLoc = locale.upgrades[def.id];
+              const up = state.upgrades.find((u) => u.id === def.id)!;
+              const maxed = up.level >= def.maxLevel;
+              const cost = calcUpgradeCost(def, up.level);
+              const canAfford = state.gold >= cost;
+              const isNext = nextBuyId === `upgrade:${def.id}`;
+              return `
+                <div class="item-card ${isNext ? 'next-buy' : ''}" data-upgrade-card="${def.id}">
+                  <div class="item-header">
+                    <span class="item-icon">${def.icon}</span>
+                    <div>
+                      <strong>${uLoc?.name ?? def.name}</strong>
+                      <span class="item-level">${up.level}/${def.maxLevel}</span>
+                    </div>
+                  </div>
+                  <p class="item-desc">${uLoc?.description ?? def.description}</p>
+                  ${maxed
+                    ? '<span class="badge maxed">MAX</span>'
+                    : `<div class="buy-row">
+                        <button class="btn btn-sm ${canAfford ? 'btn-ready' : 'disabled'}"
+                          data-tutorial-target="${def.id === 'rent_hike' ? 'upgrade-rent' : ''}"
+                          data-action="buy-upgrade" data-upgrade="${def.id}"
+                          ${canAfford ? '' : 'disabled'}>
+                          ${ui.upgrade} (${formatNumber(cost)})
+                        </button>
+                        ${affordHintHtml(state.gold, cost, baseGps, ui, onQuest, `upgrade:${def.id}`)}
+                      </div>`
+                  }
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="stats">
+          <span>${ui.total}: <span data-bind="total-gold">${formatNumber(state.totalGoldEarned)}</span></span>
+          <span>${ui.prestige}: ${state.prestigeCount}x</span>
+          ${theme.version ? `<span class="version-tag">v${theme.version}</span>` : ''}
+        </div>
+        <div class="footer-actions" data-bind="footer-actions">
+          ${prestigeReady ? `
+            <button class="btn btn-prestige" data-action="prestige">
+              ${theme.prestige.currencyIcon} ${ui.prestige} (+${prestigePts})
+            </button>
+          ` : `
+            <span class="prestige-hint" data-bind="prestige-hint">${ui.prestige}: ${formatNumber(theme.prestige.minGoldEarned)} ${ui.prestigeNeed}${state.totalGoldEarned < theme.prestige.minGoldEarned ? ` · ${affordHintText(state.totalGoldEarned, theme.prestige.minGoldEarned, baseGps, ui, onQuest, true)}` : ''}</span>
+          `}
+          <button class="btn btn-danger btn-sm" data-action="reset">${ui.reset}</button>
+        </div>
+      </footer>
+
+      ${renderTutorialOverlay(tutorial, ui)}
+    </div>
+  `;
+}
+
+function setText(el: Element | null, text: string): void {
+  if (el && el.textContent !== text) el.textContent = text;
+}
+
+function patchDynamic(root: HTMLElement, ctx: RenderContext): void {
+  const { state, theme, ui, baseGps, gps, clickStatus, onQuest, nextBuyId, tutorial } = ctx;
+
+  setText(root.querySelector('[data-bind="username"]'), `👤 ${ctx.displayUsername}`);
+
+  setText(root.querySelector('[data-bind="gold"]'), formatNumber(state.gold));
+
+  const gpsEl = root.querySelector('[data-bind="gps"]');
+  if (gpsEl) {
+    setText(gpsEl, `+${formatNumber(gps)}/s${clickStatus.active ? ` (${clickStatus.multiplier}×)` : ''}`);
+    gpsEl.classList.toggle('boosted', clickStatus.active);
+  }
+
+  const clickBtn = root.querySelector('[data-action="click-boost"]') as HTMLButtonElement | null;
+  if (clickBtn) {
+    clickBtn.classList.toggle('active', clickStatus.active);
+    clickBtn.classList.toggle('cooldown', clickStatus.cooldownLeft > 0 && !clickStatus.active);
+    setText(
+      clickBtn.querySelector('[data-bind="click-boost-label"]'),
+      clickStatus.active
+        ? `${clickStatus.multiplier}× ${formatTime(clickStatus.boostLeft)}`
+        : clickStatus.cooldownLeft > 0
+          ? formatTime(clickStatus.cooldownLeft)
+          : ui.collect,
+    );
+  }
+
+  const quest = state.activeQuest;
+  if (quest) {
+    const fill = root.querySelector('[data-bind="quest-fill"]') as HTMLElement | null;
+    if (fill) fill.style.width = `${(quest.progress / quest.durationSec) * 100}%`;
+    setText(
+      root.querySelector('[data-bind="quest-time"]'),
+      `${ui.questInProgress} ${formatTime(quest.durationSec - quest.progress)}`,
+    );
+  }
+
+  setText(root.querySelector('[data-bind="total-gold"]'), formatNumber(state.totalGoldEarned));
+
+  const prestigeHint = root.querySelector('[data-bind="prestige-hint"]');
+  if (prestigeHint) {
+    const base = `${ui.prestige}: ${formatNumber(theme.prestige.minGoldEarned)} ${ui.prestigeNeed}`;
+    const extra = state.totalGoldEarned < theme.prestige.minGoldEarned
+      ? ` · ${affordHintText(state.totalGoldEarned, theme.prestige.minGoldEarned, baseGps, ui, onQuest, true)}`
+      : '';
+    setText(prestigeHint, base + extra);
+  }
+
+  root.querySelectorAll('[data-party-card]').forEach((el) => {
+    const id = el.getAttribute('data-party-card');
+    el.classList.toggle('next-buy', nextBuyId === `party:${id}`);
+  });
+  root.querySelectorAll('[data-upgrade-card]').forEach((el) => {
+    const id = el.getAttribute('data-upgrade-card');
+    el.classList.toggle('next-buy', nextBuyId === `upgrade:${id}`);
+  });
+
+  for (const def of theme.partySlots) {
+    if (!state.unlockedZones.includes(def.unlockZone)) continue;
+    const party = state.parties.find((p) => p.id === def.id)!;
+    const cost = calcPartyCost(def, party.level);
+    const canAfford = state.gold >= cost;
+    const btn = root.querySelector(`[data-action="hire-party"][data-party="${def.id}"]`) as HTMLButtonElement | null;
+    if (btn) {
+      btn.disabled = !canAfford;
+      btn.classList.toggle('btn-ready', canAfford);
+      btn.classList.toggle('disabled', !canAfford);
+    }
+    setText(
+      root.querySelector(`[data-afford="party:${def.id}"]`),
+      canAfford ? '' : affordHintText(state.gold, cost, baseGps, ui, onQuest),
+    );
+  }
+
+  for (const def of theme.upgrades) {
+    const up = state.upgrades.find((u) => u.id === def.id)!;
+    if (up.level >= def.maxLevel) continue;
+    const cost = calcUpgradeCost(def, up.level);
+    const canAfford = state.gold >= cost;
+    const btn = root.querySelector(`[data-action="buy-upgrade"][data-upgrade="${def.id}"]`) as HTMLButtonElement | null;
+    if (btn) {
+      btn.disabled = !canAfford;
+      btn.classList.toggle('btn-ready', canAfford);
+      btn.classList.toggle('disabled', !canAfford);
+    }
+    setText(
+      root.querySelector(`[data-afford="upgrade:${def.id}"]`),
+      canAfford ? '' : affordHintText(state.gold, cost, baseGps, ui, onQuest),
+    );
+  }
+
+  for (const z of theme.zones) {
+    if (state.unlockedZones.includes(z.id)) continue;
+    const zoneCanUnlock = canUnlockZone(state, z.id, theme);
+    const btn = root.querySelector(`[data-action="unlock-zone"][data-zone="${z.id}"]`) as HTMLButtonElement | null;
+    if (btn) {
+      btn.disabled = !zoneCanUnlock;
+      btn.classList.toggle('btn-ready', zoneCanUnlock);
+      btn.classList.toggle('disabled', !zoneCanUnlock);
+    }
+    setText(
+      root.querySelector(`[data-afford="zone:${z.id}"]`),
+      zoneCanUnlock ? '' : affordHintText(state.gold, z.unlockGold, baseGps, ui, onQuest),
+    );
+  }
+
+  applyTutorialHighlight(root, tutorial.current?.target);
+}
+
+function collectPurchaseOptions(ctx: RenderContext): PurchaseOption[] {
+  const { state, theme, baseGps } = ctx;
+  const options: PurchaseOption[] = [];
+
+  for (const def of theme.partySlots) {
+    const party = state.parties.find((p) => p.id === def.id)!;
+    if (!state.unlockedZones.includes(def.unlockZone)) continue;
+    const cost = calcPartyCost(def, party.level);
+    options.push({
+      id: `party:${def.id}`,
+      kind: 'party',
+      cost,
+      affordable: state.gold >= cost,
+      timeSec: baseGps > 0 && state.gold < cost ? (cost - state.gold) / baseGps : null,
+    });
+  }
+  for (const def of theme.upgrades) {
+    const up = state.upgrades.find((u) => u.id === def.id)!;
+    if (up.level >= def.maxLevel) continue;
+    const cost = calcUpgradeCost(def, up.level);
+    options.push({
+      id: `upgrade:${def.id}`,
+      kind: 'upgrade',
+      cost,
+      affordable: state.gold >= cost,
+      timeSec: baseGps > 0 && state.gold < cost ? (cost - state.gold) / baseGps : null,
+    });
+  }
+  return options;
+}
+
+function buildContext(
+  engine: GameEngine,
+  getLocale: () => GameLocale,
+  localeManager: LocaleManager,
+  tutorial: TutorialManager,
+  getDisplayUsername: () => string,
+): RenderContext {
+  const { state, theme } = engine;
+  const locale = getLocale();
+  const baseGps = engine.getBaseGoldPerSec();
+  const gps = engine.getGoldPerSec();
+  const clickStatus = engine.getClickBoostStatus();
+  const onQuest = !!state.activeQuest;
+  const purchaseOptions = collectPurchaseOptions({
+    engine,
+    state,
+    theme,
+    locale,
+    ui: locale.ui,
+    baseGps,
+    gps,
+    clickStatus,
+    onQuest,
+    nextBuyId: null,
+    currentLocale: localeManager.locale,
+    tutorial,
+    displayUsername: '',
+  });
+
+  return {
+    engine,
+    state,
+    theme,
+    locale,
+    ui: locale.ui,
+    baseGps,
+    gps,
+    clickStatus,
+    onQuest,
+    nextBuyId: pickNextPurchase(purchaseOptions),
+    currentLocale: localeManager.locale,
+    tutorial,
+    displayUsername: getDisplayUsername(),
+  };
 }
 
 export function mountGameUI(
   engine: GameEngine,
   root: HTMLElement,
-  tutorialSteps: TutorialStep[] = [],
+  options: GameUIOptions,
 ): TutorialManager {
+  const { localeManager, getLocale, getDisplayUsername } = options;
   root.className = 'game-root';
-  const tutorial = new TutorialManager(engine.theme.id, tutorialSteps);
+  const tutorial = new TutorialManager(engine.theme.id, getLocale().tutorial);
   let wasOnQuest = false;
+  let structureKey = '';
+  let renderScheduled = false;
 
   root.addEventListener('click', (e) => {
     const target = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
     if (!target) return;
     const action = target.dataset.action;
+    const ui = getLocale().ui;
     switch (action) {
+      case 'set-locale': {
+        const locale = target.dataset.locale as LocaleId;
+        if (locale === 'tr' || locale === 'en') localeManager.setLocale(locale);
+        break;
+      }
       case 'tutorial-next':
         tutorial.advance();
         break;
@@ -62,12 +561,10 @@ export function mountGameUI(
         engine.selectZone(target.dataset.zone!);
         break;
       case 'prestige':
-        if (confirm('Prestige yapmak ilerlemeni sıfırlar ama kalıcı bonus verir. Emin misin?')) {
-          engine.prestige();
-        }
+        if (confirm(ui.confirmPrestige)) engine.prestige();
         break;
       case 'reset':
-        if (confirm('Tüm ilerleme silinecek. Emin misin?')) {
+        if (confirm(ui.confirmReset)) {
           engine.reset();
           tutorial.reset();
           wasOnQuest = false;
@@ -77,256 +574,37 @@ export function mountGameUI(
   });
 
   const render = () => {
-    const { state, theme } = engine;
-    const baseGps = engine.getBaseGoldPerSec();
-    const gps = engine.getGoldPerSec();
-    const clickStatus = engine.getClickBoostStatus();
-    const onQuest = !!state.activeQuest;
+    const ctx = buildContext(engine, getLocale, localeManager, tutorial, getDisplayUsername);
+    const { onQuest } = ctx;
+
     if (wasOnQuest && !onQuest) tutorial.checkQuestDone(false, true);
     wasOnQuest = onQuest;
-    const prestigePts = calcPrestigePoints(state, theme);
-    const quest = state.activeQuest;
-    const zone = theme.zones.find((z) => z.id === state.currentZoneId)!;
 
-    const purchaseOptions: PurchaseOption[] = [];
-
-    for (const def of theme.partySlots) {
-      const party = state.parties.find((p) => p.id === def.id)!;
-      if (!state.unlockedZones.includes(def.unlockZone)) continue;
-      const cost = calcPartyCost(def, party.level);
-      purchaseOptions.push({
-        id: `party:${def.id}`,
-        kind: 'party',
-        cost,
-        affordable: state.gold >= cost,
-        timeSec: baseGps > 0 && state.gold < cost ? (cost - state.gold) / baseGps : null,
-      });
+    const key = computeStructureKey(ctx);
+    if (key !== structureKey || !root.querySelector('[data-game-shell]')) {
+      structureKey = key;
+      root.innerHTML = buildHTML(ctx);
+    } else {
+      patchDynamic(root, ctx);
     }
-    for (const def of theme.upgrades) {
-      const up = state.upgrades.find((u) => u.id === def.id)!;
-      if (up.level >= def.maxLevel) continue;
-      const cost = calcUpgradeCost(def, up.level);
-      purchaseOptions.push({
-        id: `upgrade:${def.id}`,
-        kind: 'upgrade',
-        cost,
-        affordable: state.gold >= cost,
-        timeSec: baseGps > 0 && state.gold < cost ? (cost - state.gold) / baseGps : null,
-      });
-    }
-    const nextBuyId = pickNextPurchase(purchaseOptions);
-    const clickConfig = theme.clickBoost ?? { multiplier: 2, durationSec: 30, cooldownSec: 30, tapGoldFactor: 0.08 };
-
-    root.innerHTML = `
-      <header class="header">
-        <div class="brand">
-          <span class="brand-icon">📒</span>
-          <div>
-            <h1>${theme.title}</h1>
-            <p class="tagline">${theme.tagline}</p>
-          </div>
-        </div>
-        <div class="resources" data-tutorial-target="resources">
-          <div class="resource gold">
-            <span>🪙</span>
-            <span class="resource-value">${formatNumber(state.gold)}</span>
-            <span class="resource-rate ${clickStatus.active ? 'boosted' : ''}">+${formatNumber(gps)}/s${clickStatus.active ? ` (${clickStatus.multiplier}×)` : ''}</span>
-          </div>
-          ${baseGps > 0 ? `
-            <button
-              class="click-boost-btn ${clickStatus.active ? 'active' : ''} ${clickStatus.cooldownLeft > 0 && !clickStatus.active ? 'cooldown' : ''}"
-              data-action="click-boost"
-              type="button"
-              title="Tıkla: anlık altın + ${clickConfig.multiplier}× gelir"
-            >
-              <span class="click-boost-icon">💰</span>
-              <span class="click-boost-label">
-                ${clickStatus.active
-                  ? `${clickStatus.multiplier}× ${formatTime(clickStatus.boostLeft)}`
-                  : clickStatus.cooldownLeft > 0
-                    ? formatTime(clickStatus.cooldownLeft)
-                    : 'Tahsil Et'}
-              </span>
-            </button>
-          ` : ''}
-          ${state.prestigePoints > 0 ? `
-            <div class="resource prestige">
-              <span>${theme.prestige.currencyIcon}</span>
-              <span class="resource-value">${state.prestigePoints}</span>
-              <span class="resource-label">${theme.prestige.currencyName}</span>
-            </div>
-          ` : ''}
-        </div>
-      </header>
-
-      ${engine.offlineEarnings ? `
-        <div class="offline-banner">
-          <p>Offline kazanç: <strong>+${formatNumber(engine.offlineEarnings.gold)}</strong> (${formatTime(engine.offlineEarnings.seconds)})</p>
-          <button class="btn btn-primary" data-action="collect-offline">Topla</button>
-        </div>
-      ` : ''}
-
-      <main class="main-grid">
-        <section class="panel zone-panel">
-          <h2>📍 Aktif Bölge</h2>
-          <div class="zone-current">
-            <span class="zone-icon">${zone.icon}</span>
-            <div>
-              <strong>${zone.name}</strong>
-              <p>${zone.description}</p>
-            </div>
-          </div>
-          ${quest ? `
-            <div class="quest-progress" data-tutorial-target="start-quest">
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: ${(quest.progress / quest.durationSec) * 100}%"></div>
-              </div>
-              <p>Görev devam ediyor... ${formatTime(quest.durationSec - quest.progress)}</p>
-            </div>
-          ` : `
-            <button class="btn btn-accent btn-block" data-tutorial-target="start-quest" data-action="start-quest" ${state.parties.every(p => p.level === 0) ? 'disabled' : ''}>
-              ⚔️ Gönder (Expedition)
-            </button>
-          `}
-          <div class="zone-list">
-            ${theme.zones.map((z) => {
-              const unlocked = state.unlockedZones.includes(z.id);
-              const active = state.currentZoneId === z.id;
-              const canUnlock = canUnlockZone(state, z.id, theme);
-              return `
-                <div class="zone-item ${active ? 'active' : ''} ${unlocked ? '' : 'locked'}">
-                  <span>${z.icon}</span>
-                  <span>${z.name}</span>
-                  ${active ? '<span class="badge">Aktif</span>' : ''}
-                  ${!unlocked && canUnlock
-                    ? `<button class="btn btn-sm btn-ready" data-action="unlock-zone" data-zone="${z.id}">Aç (${formatNumber(z.unlockGold)})</button>`
-                    : !unlocked
-                      ? `<span class="lock-label">${formatNumber(z.unlockGold)}${z.unlockGold > state.totalGoldEarned ? affordHint(state.totalGoldEarned, z.unlockGold, baseGps, onQuest, true) : ''}</span>`
-                      : !active
-                        ? `<button class="btn btn-sm" data-action="select-zone" data-zone="${z.id}">Seç</button>`
-                        : ''
-                  }
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </section>
-
-        <section class="panel ledger-panel">
-          <h2>📒 Muhasebe Defteri</h2>
-          <div class="ledger-log">
-            ${engine.eventLog.length === 0
-              ? '<p class="ledger-empty">Henüz kayıt yok.</p>'
-              : engine.eventLog.map((entry) => `
-                  <div class="ledger-entry ledger-${entry.tone}">
-                    <span class="ledger-dot"></span>
-                    <span>${entry.message}</span>
-                  </div>
-                `).join('')
-            }
-          </div>
-        </section>
-
-        <section class="panel party-panel">
-          <h2>👥 Partiler (Kiracılar)</h2>
-          <div class="item-list">
-            ${theme.partySlots.map((def) => {
-              const party = state.parties.find((p) => p.id === def.id)!;
-              const unlocked = state.unlockedZones.includes(def.unlockZone);
-              const cost = calcPartyCost(def, party.level);
-              const canAfford = state.gold >= cost;
-              const isNext = nextBuyId === `party:${def.id}`;
-              return `
-                <div class="item-card ${unlocked ? '' : 'locked'} ${isNext ? 'next-buy' : ''}">
-                  <div class="item-header">
-                    <span class="item-icon">${def.icon}</span>
-                    <div>
-                      <strong>${def.name}</strong>
-                      <span class="item-level">Lv ${party.level}</span>
-                    </div>
-                    <span class="item-dps">${party.level > 0 ? formatNumber(def.baseDps * party.level) : '—'} DPS</span>
-                  </div>
-                  <p class="item-desc">${def.description}</p>
-                  ${unlocked ? `
-                    <div class="buy-row">
-                      <button class="btn btn-sm ${canAfford ? 'btn-ready' : 'disabled'}"
-                        data-tutorial-target="${def.id === 'squire' ? 'hire-squire' : ''}"
-                        data-action="hire-party" data-party="${def.id}"
-                        ${canAfford ? '' : 'disabled'}>
-                        Kirala (${formatNumber(cost)})
-                      </button>
-                      ${!canAfford ? affordHint(state.gold, cost, baseGps, onQuest) : ''}
-                    </div>
-                  ` : '<span class="lock-label">Bölge gerekli</span>'}
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </section>
-
-        <section class="panel upgrade-panel">
-          <h2>📈 Lonca Yatırımları</h2>
-          <div class="item-list">
-            ${theme.upgrades.map((def) => {
-              const up = state.upgrades.find((u) => u.id === def.id)!;
-              const maxed = up.level >= def.maxLevel;
-              const cost = calcUpgradeCost(def, up.level);
-              const canAfford = state.gold >= cost;
-              const isNext = nextBuyId === `upgrade:${def.id}`;
-              return `
-                <div class="item-card ${isNext ? 'next-buy' : ''}">
-                  <div class="item-header">
-                    <span class="item-icon">${def.icon}</span>
-                    <div>
-                      <strong>${def.name}</strong>
-                      <span class="item-level">${up.level}/${def.maxLevel}</span>
-                    </div>
-                  </div>
-                  <p class="item-desc">${def.description}</p>
-                  ${maxed
-                    ? '<span class="badge maxed">MAX</span>'
-                    : `<div class="buy-row">
-                        <button class="btn btn-sm ${canAfford ? 'btn-ready' : 'disabled'}"
-                          data-tutorial-target="${def.id === 'rent_hike' ? 'upgrade-rent' : ''}"
-                          data-action="buy-upgrade" data-upgrade="${def.id}"
-                          ${canAfford ? '' : 'disabled'}>
-                          Yükselt (${formatNumber(cost)})
-                        </button>
-                        ${!canAfford ? affordHint(state.gold, cost, baseGps, onQuest) : ''}
-                      </div>`
-                  }
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </section>
-      </main>
-
-      <footer class="footer">
-        <div class="stats">
-          <span>Toplam: ${formatNumber(state.totalGoldEarned)}</span>
-          <span>Prestige: ${state.prestigeCount}x</span>
-          ${theme.version ? `<span class="version-tag">v${theme.version}</span>` : ''}
-        </div>
-        <div class="footer-actions">
-          ${canPrestige(state, theme) ? `
-            <button class="btn btn-prestige" data-action="prestige">
-              ${theme.prestige.currencyIcon} Prestige (+${prestigePts})
-            </button>
-          ` : `
-            <span class="prestige-hint">Prestige: ${formatNumber(theme.prestige.minGoldEarned)} altın${state.totalGoldEarned < theme.prestige.minGoldEarned ? ` · ${affordHint(state.totalGoldEarned, theme.prestige.minGoldEarned, baseGps, onQuest, true)}` : ''}</span>
-          `}
-          <button class="btn btn-danger btn-sm" data-action="reset">Sıfırla</button>
-        </div>
-      </footer>
-
-      ${renderTutorialOverlay(tutorial)}
-    `;
-
-    applyTutorialHighlight(root, tutorial.current?.target);
   };
 
-  engine.subscribe(render);
+  const scheduleRender = () => {
+    if (renderScheduled) return;
+    renderScheduled = true;
+    requestAnimationFrame(() => {
+      renderScheduled = false;
+      render();
+    });
+  };
+
+  localeManager.subscribe(() => {
+    tutorial.updateSteps(getLocale().tutorial);
+    structureKey = '';
+    scheduleRender();
+  });
+
+  engine.subscribe(scheduleRender);
   render();
   return tutorial;
 }

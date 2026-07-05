@@ -20,8 +20,10 @@ import {
 import { canUnlockZone, unlockZone, setCurrentZone } from './systems/ZoneSystem.ts';
 import { canPrestige, doPrestige, calcPrestigePoints } from './systems/PrestigeSystem.ts';
 import { createLogEntry, pushLog, type LogEntry } from './core/EventLog.ts';
+import type { GameLocale } from './i18n/types.ts';
 
 export type GameListener = () => void;
+export type LocaleProvider = () => GameLocale;
 
 export interface FlavorText {
   questCompleteMsg: (gold: number, deaths: number, zoneName: string) => string;
@@ -37,7 +39,7 @@ export interface FlavorText {
 
 export class GameEngine {
   readonly theme: ThemeConfig;
-  readonly flavor: FlavorText;
+  private readonly getLocale: LocaleProvider;
   state: GameState;
   private loop: GameLoop;
   private listeners = new Set<GameListener>();
@@ -48,10 +50,12 @@ export class GameEngine {
   clickCooldownLeft = 0;
   lastTapGold = 0;
 
-  constructor(theme: ThemeConfig, flavor: FlavorText) {
+  constructor(theme: ThemeConfig, getLocale: LocaleProvider) {
     this.theme = theme;
-    this.flavor = flavor;
-    this.state = loadGame(theme) ?? createInitialState(
+    this.getLocale = getLocale;
+    const saved = loadGame(theme);
+    const hadSave = !!saved;
+    this.state = saved ?? createInitialState(
       theme.partySlots.map((p) => p.id),
       theme.upgrades.map((u) => u.id),
       theme.zones[0].id,
@@ -60,11 +64,20 @@ export class GameEngine {
     );
     this.loop = new GameLoop((dt) => this.tick(dt));
     this.initSession();
-    if (!loadGame(this.theme)) {
-      this.log('Defter açıldı. İlk kiracın masada — gelir akıyor.', 'neutral');
-    } else {
-      this.log('Defter açıldı. Bugün de kâr hedefliyoruz.', 'neutral');
-    }
+    const logs = this.getLocale().logs;
+    this.log(hadSave ? logs.welcomeBack : logs.welcomeNew, 'neutral');
+  }
+
+  private zoneName(zoneId: string, fallback: string): string {
+    return this.getLocale().zones[zoneId]?.name ?? fallback;
+  }
+
+  private partyName(partyId: string, fallback: string): string {
+    return this.getLocale().parties[partyId]?.name ?? fallback;
+  }
+
+  private upgradeName(upgradeId: string, fallback: string): string {
+    return this.getLocale().upgrades[upgradeId]?.name ?? fallback;
   }
 
   private log(message: string, tone: LogEntry['tone'] = 'neutral'): void {
@@ -146,8 +159,9 @@ export class GameEngine {
     const hasIncome = calcPartyDps(this.state, this.theme) > 0;
     if (hasIncome && this.clickBoostLeft <= 0 && this.clickCooldownLeft <= 0) {
       this.clickBoostLeft = config.durationSec;
-      const msg = this.flavor.clickBoostMsg?.(config.multiplier, config.durationSec)
-        ?? `Acil tahsilat! ${config.multiplier}× gelir aktif.`;
+      const flavor = this.getLocale().flavor;
+      const msg = flavor.clickBoostMsg?.(config.multiplier, config.durationSec)
+        ?? `+${config.multiplier}×`;
       this.log(msg, 'profit');
       trackEvent({ type: 'click_boost_start', multiplier: config.multiplier });
     }
@@ -174,7 +188,7 @@ export class GameEngine {
     if (!this.offlineEarnings) return;
     const { gold, seconds } = this.offlineEarnings;
     this.addGold(gold);
-    this.log(this.flavor.offlineMsg(gold, seconds / 3600), 'profit');
+    this.log(this.getLocale().flavor.offlineMsg(gold, seconds / 3600), 'profit');
     this.offlineEarnings = null;
     this.persist();
     this.notify();
@@ -189,7 +203,7 @@ export class GameEngine {
     if (this.state.gold < cost) return false;
     this.state.gold -= cost;
     party.level += 1;
-    this.log(this.flavor.hireMsg(def.name, party.level), 'neutral');
+    this.log(this.getLocale().flavor.hireMsg(this.partyName(partyId, def.name), party.level), 'neutral');
     trackEvent({ type: 'party_hire', partyId, level: party.level });
     this.persist();
     this.notify();
@@ -204,7 +218,7 @@ export class GameEngine {
     if (this.state.gold < cost) return false;
     this.state.gold -= cost;
     up.level += 1;
-    this.log(this.flavor.upgradeMsg(def.name, up.level), 'milestone');
+    this.log(this.getLocale().flavor.upgradeMsg(this.upgradeName(upgradeId, def.name), up.level), 'milestone');
     trackEvent({ type: 'upgrade_buy', upgradeId, level: up.level });
     this.persist();
     this.notify();
@@ -223,7 +237,10 @@ export class GameEngine {
       durationSec: zone.questDurationSec,
       progress: 0,
     };
-    this.log(this.flavor.questStartMsg(zone.name, activeParties.length), 'neutral');
+    this.log(
+      this.getLocale().flavor.questStartMsg(this.zoneName(zone.id, zone.name), activeParties.length),
+      'neutral',
+    );
     this.notify();
     return true;
   }
@@ -237,12 +254,16 @@ export class GameEngine {
       const def = this.theme.partySlots.find((p) => p.id === pid);
       if (party && party.level > 0) {
         party.level -= 1;
-        if (def) this.log(this.flavor.questDeathMsg(def.name), 'danger');
+        if (def) this.log(this.getLocale().flavor.questDeathMsg(this.partyName(pid, def.name)), 'danger');
       }
     }
     this.log(
-      this.flavor.questCompleteMsg(result.gold, result.deaths.length, zone.name),
-      result.deaths.length > 0 ? 'profit' : 'profit',
+      this.getLocale().flavor.questCompleteMsg(
+        result.gold,
+        result.deaths.length,
+        this.zoneName(zone.id, zone.name),
+      ),
+      'profit',
     );
     trackEvent({
       type: 'quest_complete',
@@ -257,9 +278,9 @@ export class GameEngine {
 
   tryUnlockZone(zoneId: string): boolean {
     if (!canUnlockZone(this.state, zoneId, this.theme)) return false;
-    this.state = unlockZone(this.state, zoneId);
+    this.state = unlockZone(this.state, zoneId, this.theme);
     const zone = this.theme.zones.find((z) => z.id === zoneId)!;
-    this.log(this.flavor.zoneUnlockMsg(zone.name), 'milestone');
+    this.log(this.getLocale().flavor.zoneUnlockMsg(this.zoneName(zoneId, zone.name)), 'milestone');
     trackEvent({ type: 'zone_unlock', zoneId });
     this.persist();
     this.notify();
@@ -278,7 +299,7 @@ export class GameEngine {
     if (!canPrestige(this.state, this.theme)) return false;
     const points = calcPrestigePoints(this.state, this.theme);
     this.state = doPrestige(this.state, this.theme);
-    this.log(this.flavor.prestigeMsg(points), 'milestone');
+    this.log(this.getLocale().flavor.prestigeMsg(points), 'milestone');
     trackEvent({ type: 'prestige', points, total: this.state.prestigePoints });
     this.persist();
     this.notify();
@@ -292,7 +313,7 @@ export class GameEngine {
     this.clickBoostLeft = 0;
     this.clickCooldownLeft = 0;
     this.lastTapGold = 0;
-    this.log('Defter sıfırlandı. Yeni mali yıl başladı.', 'neutral');
+    this.log(this.getLocale().logs.reset, 'neutral');
     this.notify();
   }
 
@@ -301,8 +322,12 @@ export class GameEngine {
     this.state.totalGoldEarned += amount;
   }
 
-  private persist(): void {
+  persistNow(): void {
     saveGame(this.state, this.theme.id);
+  }
+
+  private persist(): void {
+    this.persistNow();
   }
 
   getGoldPerSec(): number {

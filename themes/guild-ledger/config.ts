@@ -3,7 +3,7 @@ import type { ThemeConfig } from '../../packages/engine/config/ThemeSchema.ts';
 export const guildLedgerTheme: ThemeConfig = {
   id: 'guild-ledger',
   title: 'Guild Ledger',
-  version: '0.1.0-soft',
+  version: '0.2.0',
   tagline: 'Sen kahraman değilsin — lonca muhasebecisisin. Partiler ölürken sen kâr yazarsın.',
   startingGold: 15,
   startingParties: [{ id: 'squire', level: 1 }],

@@ -4,15 +4,17 @@ import type { GameState } from '../core/types.ts';
 export function canUnlockZone(state: GameState, zoneId: string, theme: ThemeConfig): boolean {
   const zone = theme.zones.find((z) => z.id === zoneId);
   if (!zone) return false;
-  return state.totalGoldEarned >= zone.unlockGold && !state.unlockedZones.includes(zoneId);
+  return !state.unlockedZones.includes(zoneId) && state.gold >= zone.unlockGold;
 }
 
-export function unlockZone(state: GameState, zoneId: string): GameState {
+export function unlockZone(state: GameState, zoneId: string, theme: ThemeConfig): GameState {
   if (state.unlockedZones.includes(zoneId)) return state;
+  const zone = theme.zones.find((z) => z.id === zoneId);
+  if (!zone || state.gold < zone.unlockGold) return state;
   return {
     ...state,
+    gold: state.gold - zone.unlockGold,
     unlockedZones: [...state.unlockedZones, zoneId],
-    currentZoneId: zoneId,
   };
 }
 

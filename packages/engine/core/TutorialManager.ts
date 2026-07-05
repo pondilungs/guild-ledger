@@ -13,12 +13,21 @@ export class TutorialManager {
   private stepIndex = 0;
   private completed = false;
   private readonly storageKey: string;
-  private readonly steps: TutorialStep[];
+  private steps: TutorialStep[];
 
   constructor(themeId: string, steps: TutorialStep[]) {
     this.storageKey = `game-lab-tutorial-${themeId}`;
     this.steps = steps;
     this.load();
+  }
+
+  updateSteps(steps: TutorialStep[]): void {
+    const currentId = this.steps[this.stepIndex]?.id;
+    this.steps = steps;
+    if (!this.completed && currentId) {
+      const idx = steps.findIndex((s) => s.id === currentId);
+      if (idx >= 0) this.stepIndex = idx;
+    }
   }
 
   get active(): boolean {

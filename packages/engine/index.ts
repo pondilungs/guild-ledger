@@ -1,7 +1,13 @@
 export type { ThemeConfig } from './config/ThemeSchema.ts';
-export { GameEngine } from './GameEngine.ts';
-export { mountGameUI } from './ui/GameUI.ts';
+export { GameEngine, type FlavorText, type LocaleProvider } from './GameEngine.ts';
+export { mountGameUI, type GameUIOptions } from './ui/GameUI.ts';
+export { mountSocialLayer } from './ui/SocialModals.ts';
 export { getEvents, trackEvent } from './core/Analytics.ts';
 export { formatNumber, formatTime } from './core/format.ts';
-export { calcTimeToAfford, formatAffordHint } from './core/affordability.ts';
+export { calcTimeToAfford, formatAffordHint, type AffordLabels } from './core/affordability.ts';
 export { TutorialManager, type TutorialStep } from './core/TutorialManager.ts';
+export { LocaleManager, detectLocale, type LocaleId } from './core/LocaleManager.ts';
+export type { GameLocale, LocalizedEntity } from './i18n/types.ts';
+export { ProfileManager, buildStats, type PlayerProfile, type PlayerStats } from './core/ProfileManager.ts';
+export { AutoSaveManager } from './core/AutoSaveManager.ts';
+export { LeaderboardClient, resolveLeaderboardUrl, type LeaderboardEntry } from './services/LeaderboardClient.ts';
