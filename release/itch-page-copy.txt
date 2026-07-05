@@ -1,0 +1,62 @@
+=== GUILD LEDGER v0.1.0-soft — itch.io UPLOAD ===
+
+DOSYALAR (release/ klasöründe):
+  • guild-ledger-itch.zip  ← HTML upload
+  • guild-ledger-cover.jpg ← Cover image
+
+TITLE:
+Guild Ledger
+
+SUBTITLE:
+Idle RPG — You are the guild accountant.
+
+URL:
+guild-ledger
+
+KIND: HTML
+
+TAGS:
+idle, incremental, rpg, management, fantasy, clicker, singleplayer, web, tycoon
+
+PRICE: $0 (Name your own price, min $0)
+
+=== SHORT DESCRIPTION ===
+You are not the hero. You are the guild accountant. Send parties to die for profit.
+
+=== FULL DESCRIPTION ===
+[b]Guild Ledger[/b] — Soft Launch v0.1.0
+
+You are NOT the hero. You are the guild accountant.
+
+Rent adventurers, send expeditions, collect rent when they die, and grow your guild empire while gold flows in.
+
+[b]How to play[/b]
+• Hire party members — passive gold every second
+• Send expeditions — burst profit, death risk
+• Upgrade the guild — multiply income
+• Unlock zones — higher risk, higher rent
+• Prestige — permanent reputation bonuses
+• Click [b]Tahsil Et[/b] — 2× income boost
+
+[b]Features[/b]
+• Browser idle/incremental RPG
+• Mobile-friendly
+• Offline earnings (8h cap)
+• Auto-save
+• Tutorial for new players
+
+[b]Soft launch[/b] — We're testing balance and retention. Feedback appreciated!
+
+Controls: Mouse / touch
+
+=== EMBED SETTINGS ===
+☑ Embed in page
+Viewport: 960 × 720 (or Fullscreen)
+☑ Mobile friendly
+Scrollbars: OFF
+
+=== AFTER PUBLISH ===
+Add to game URL for tracking: ?ref=itch
+(Analytics auto-tags itch traffic)
+
+Test: load → tutorial → hire → quest → upgrade → refresh (save check)

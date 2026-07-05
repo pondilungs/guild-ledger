@@ -1,0 +1,50 @@
+GUILD LEDGER — SOFT LAUNCH (OTOMATİK HAZIR)
+=============================================
+Sürüm: 0.1.0-soft | Tarih: 2026-07-06
+
+SENİN YAPMAN GEREKEN TEK ŞEY (5 dk, bir kez)
+--------------------------------------------
+itch.io hesabınla giriş yap → Create project → HTML
+Dosyaları yükle (release/ klasörü):
+
+  1. guild-ledger-itch.zip     → Uploads
+  2. guild-ledger-cover.jpg  → Cover image
+  3. itch-page-copy.txt        → Metinleri kopyala-yapıştır
+
+Embed: 960×720 | Draft test → Public
+
+Bundan sonrası bende:
+  • npm run build:itch → yeni zip
+  • itch.io'da "Upload new file" ile güncelle
+  • Metrikleri analytics script ile oku
+
+DOSYALAR
+--------
+release/guild-ledger-itch.zip   (16 KB, HTML5)
+release/guild-ledger-cover.jpg    (kapak)
+release/itch-page-copy.txt        (sayfa metinleri)
+
+YEREL TEST
+----------
+npm run preview → http://localhost:4173
+
+METRİK OKUMA
+------------
+Tarayıcı konsolu:
+  copy(localStorage.getItem('game-lab-analytics'))
+
+Terminal:
+  npm run analytics -- '<yapıştır>'
+
+itch trafiği otomatik etiketlenir: ?ref=itch
+
+RETENTION HEDEF
+---------------
+D1 ≥ 35% | D7 ≥ 12% | Session ≥ 8dk
+
+GÜNCELLEME AKIŞI
+----------------
+1. Kod değişikliği
+2. themes/guild-ledger/config.ts → version bump
+3. npm run build:itch
+4. itch.io upload new zip

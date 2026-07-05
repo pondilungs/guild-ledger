@@ -1,0 +1,16 @@
+{
+  "name": "game-lab",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @game-lab/web",
+    "build": "npm run build -w @game-lab/web",
+    "build:itch": "npm run build && node scripts/package-itch.mjs",
+    "preview": "npm run preview -w @game-lab/web",
+    "analytics": "node scripts/export-analytics.mjs"
+  }
+}
