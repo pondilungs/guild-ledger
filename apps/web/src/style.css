@@ -1038,18 +1038,20 @@ body {
 }
 
 .modal-loot-workshop {
-  width: min(540px, 100%);
+  width: min(500px, 100%);
   display: flex;
   flex-direction: column;
-  max-height: min(82vh, 680px);
+  max-height: min(84vh, 700px);
   overflow: hidden;
+  padding: 1rem 1.1rem;
 }
 
 .loot-workshop-head {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.15rem;
+  margin-bottom: 0.35rem;
 }
 
 .loot-workshop-head .modal-header {
@@ -1058,83 +1060,88 @@ body {
 
 .loot-scroll-hint {
   align-self: flex-end;
-  padding-right: 0.1rem;
+  font-size: 0.66rem;
 }
 
 .loot-modal-desc {
   flex-shrink: 0;
-  margin-bottom: 0.65rem;
+  margin: 0 0 0.6rem;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.78rem;
   line-height: 1.45;
+  color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 
-.loot-entry-list {
+.loot-card-list {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.55rem;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  padding-right: 0.2rem;
-  padding-bottom: 0.25rem;
+  padding-right: 0.15rem;
+  padding-bottom: 0.2rem;
 }
 
-.loot-entry-list::-webkit-scrollbar {
-  width: 7px;
+.loot-card-list::-webkit-scrollbar {
+  width: 6px;
 }
 
-.loot-entry-list::-webkit-scrollbar-track {
-  background: var(--surface2);
-  border-radius: 4px;
+.loot-card-list::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.loot-entry-list::-webkit-scrollbar-thumb {
+.loot-card-list::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 4px;
+  border-radius: 999px;
 }
 
-.loot-entry-list::-webkit-scrollbar-thumb:hover {
-  background: var(--gold);
+.loot-card-list.has-overflow {
+  box-shadow: inset 0 -10px 10px -10px rgba(0, 0, 0, 0.4);
 }
 
-.loot-entry-list.has-overflow {
-  box-shadow: inset 0 -12px 12px -12px rgba(0, 0, 0, 0.35);
-}
-
-.loot-entry {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface2);
-  overflow: hidden;
+.loot-card {
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
+  gap: 0.5rem;
+  padding: 0.65rem 0.7rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }
 
-.loot-entry.is-owned {
-  border-color: rgba(44, 182, 125, 0.35);
-  background: linear-gradient(180deg, rgba(44, 182, 125, 0.06) 0%, var(--surface2) 40%);
+.loot-card.can-craft {
+  border-color: rgba(245, 197, 66, 0.45);
+  box-shadow: 0 0 0 1px rgba(245, 197, 66, 0.12);
 }
 
-.loot-entry.is-locked {
-  opacity: 0.72;
+.loot-card.is-owned {
+  border-color: rgba(44, 182, 125, 0.4);
+  background: linear-gradient(180deg, rgba(44, 182, 125, 0.07), var(--surface2) 55%);
 }
 
-.loot-entry-header {
+.loot-card.is-locked {
+  padding: 0.5rem 0.65rem;
+  opacity: 0.65;
+}
+
+.loot-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.45rem 0.7rem;
-  background: rgba(0, 0, 0, 0.15);
-  border-bottom: 1px solid var(--border);
 }
 
-.loot-entry-zone {
-  font-size: 0.72rem;
+.loot-card-zone {
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -1145,183 +1152,191 @@ body {
   white-space: nowrap;
 }
 
-.loot-entry-count {
-  font-size: 0.78rem;
+.loot-card-meter {
+  font-size: 0.76rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--gold);
   flex-shrink: 0;
+  padding: 0.12rem 0.45rem;
+  background: rgba(245, 197, 66, 0.1);
+  border: 1px solid rgba(245, 197, 66, 0.25);
+  border-radius: 999px;
 }
 
-.loot-entry-status.locked {
-  font-size: 0.72rem;
-  color: var(--muted);
-  flex-shrink: 0;
-}
-
-.loot-entry-locked-body {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 0.7rem;
-}
-
-.loot-entry-icon-sm {
-  font-size: 1.15rem;
-  flex-shrink: 0;
-}
-
-.loot-entry-locked-text {
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.loot-entry-pipeline {
+.loot-card-flow {
   display: grid;
-  grid-template-columns: 1fr minmax(4.5rem, 5.5rem) 1fr;
-  gap: 0.35rem;
-  align-items: center;
-  padding: 0.65rem 0.7rem 0.5rem;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.4rem;
+  align-items: stretch;
 }
 
-.loot-entry-node {
+.loot-card-tile {
   display: flex;
   align-items: center;
   gap: 0.45rem;
   min-width: 0;
-  padding: 0.45rem 0.5rem;
+  padding: 0.5rem 0.55rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
 }
 
-.loot-entry-node.is-material {
-  border-color: rgba(106, 143, 90, 0.4);
+.loot-card-tile.is-shard {
+  border-color: rgba(106, 143, 90, 0.45);
 }
 
-.loot-entry-node.is-craft {
-  border-color: rgba(127, 90, 240, 0.35);
+.loot-card-tile.is-gear {
+  border-color: rgba(127, 90, 240, 0.4);
 }
 
-.loot-entry-icon {
-  font-size: 1.35rem;
+.loot-card-emoji {
+  font-size: 1.4rem;
   line-height: 1;
   flex-shrink: 0;
 }
 
-.loot-entry-meta {
+.loot-card-tile-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 0.08rem;
   min-width: 0;
 }
 
-.loot-entry-label {
-  font-size: 0.62rem;
+.loot-card-tile-label {
+  font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
 }
 
-.loot-entry-name {
-  font-size: 0.82rem;
+.loot-card-tile-name {
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
 }
 
-.loot-entry-bridge {
+.loot-card-arrow {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0 0.15rem;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gold);
+  padding-top: 0.15rem;
 }
 
-.loot-progress-wrap {
-  width: 100%;
-  height: 5px;
+.loot-card-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.loot-progress-track {
+  flex: 1;
+  height: 7px;
   background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 999px;
   overflow: hidden;
-  border: 1px solid var(--border);
 }
 
 .loot-progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, #6a8f5a, var(--gold));
+  background: linear-gradient(90deg, #5a9a4a, var(--gold));
   border-radius: 999px;
   transition: width 0.25s ease;
 }
 
-.loot-entry-pct {
-  font-size: 0.68rem;
+.loot-card-pct {
+  min-width: 2.35rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: var(--gold);
   font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  text-align: right;
 }
 
-.loot-entry-hint {
-  margin: 0 0.7rem;
-  padding: 0.45rem 0.55rem;
-  font-size: 0.76rem;
+.loot-card-desc {
+  margin: 0;
+  font-size: 0.74rem;
   line-height: 1.4;
   color: var(--muted);
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: 6px;
-  border-left: 2px solid rgba(127, 90, 240, 0.45);
 }
 
-.loot-entry-action {
-  margin: 0 0.7rem 0.65rem;
-  align-self: stretch;
-  min-height: 2.15rem;
+.loot-card-craft {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-height: 2.1rem;
   -webkit-tap-highlight-color: transparent;
 }
 
-.loot-entry-owned {
+.loot-card-cost {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 999px;
+}
+
+.loot-card-owned {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  margin: 0 0.7rem 0.65rem;
-  padding: 0.5rem 0.65rem;
-  font-size: 0.8rem;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: var(--accent2);
-  background: rgba(44, 182, 125, 0.12);
-  border: 1px solid rgba(44, 182, 125, 0.35);
+  background: rgba(44, 182, 125, 0.1);
+  border: 1px solid rgba(44, 182, 125, 0.3);
   border-radius: 8px;
 }
 
-.loot-entry-owned span {
-  font-size: 0.9rem;
+.loot-card-locked-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.45rem;
+  align-items: center;
+  font-size: 0.78rem;
 }
 
-@media (max-width: 480px) {
-  .loot-entry-pipeline {
+.loot-card-locked-gear {
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.loot-card-lock-tag {
+  font-size: 0.68rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 400px) {
+  .loot-card-flow {
     grid-template-columns: 1fr;
-    gap: 0.4rem;
+    gap: 0.3rem;
   }
 
-  .loot-entry-bridge {
-    flex-direction: row;
-    align-items: center;
-    padding: 0.15rem 0;
+  .loot-card-arrow {
+    transform: rotate(90deg);
+    padding: 0;
   }
 
-  .loot-progress-wrap {
-    flex: 1;
+  .loot-card-locked-row {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
   }
 
-  .loot-entry-pct {
-    min-width: 2.5rem;
-    text-align: right;
+  .loot-card-lock-tag {
+    justify-self: start;
   }
 }
 

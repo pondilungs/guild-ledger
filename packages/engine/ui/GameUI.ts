@@ -232,56 +232,56 @@ function buildLootPairCard(
 
   if (!zoneUnlocked) {
     return `
-      <div class="loot-entry is-locked" data-loot-pair="${craft.id}" data-loot-id="${loot.id}">
-        <div class="loot-entry-header">
-          <span class="loot-entry-zone">${zoneLabel}</span>
-          <span class="loot-entry-status locked">${ui.lootZoneLocked}</span>
-        </div>
-        <div class="loot-entry-locked-body">
-          <span class="loot-entry-icon-sm">${craft.icon}</span>
-          <span class="loot-entry-locked-text">${craftName}</span>
+      <div class="loot-card is-locked" data-loot-pair="${craft.id}" data-loot-id="${loot.id}">
+        <div class="loot-card-locked-row">
+          <span class="loot-card-zone">${zoneLabel}</span>
+          <span class="loot-card-locked-gear">${craft.icon} ${craftName}</span>
+          <span class="loot-card-lock-tag">${ui.lootZoneLocked}</span>
         </div>
       </div>
     `;
   }
 
   const action = owned
-    ? `<div class="loot-entry-owned"><span>✓</span> ${ui.lootOwned}</div>`
-    : `<button class="btn btn-sm loot-entry-action ${canCraft ? 'btn-ready' : 'disabled'}"
+    ? `<div class="loot-card-owned"><span aria-hidden="true">✓</span> ${ui.lootOwned}</div>`
+    : `<button class="btn btn-sm loot-card-craft ${canCraft ? 'btn-ready' : 'disabled'}"
         data-action="craft-zone-loot" data-loot-craft="${craft.id}"
         ${canCraft ? '' : 'disabled'}>
-        ${ui.craftWithLoot} · ${craft.shardCost} ${loot.icon}
+        <span>${ui.craftWithLoot}</span>
+        <span class="loot-card-cost">${craft.shardCost} ${loot.icon}</span>
       </button>`;
 
   return `
-    <div class="loot-entry ${owned ? 'is-owned' : ''}" data-loot-pair="${craft.id}" data-loot-id="${loot.id}">
-      <div class="loot-entry-header">
-        <span class="loot-entry-zone">${zoneLabel}</span>
-        <span class="loot-entry-count" data-bind="loot-count">${count} / ${craft.shardCost}</span>
+    <div class="loot-card ${owned ? 'is-owned' : ''} ${canCraft && !owned ? 'can-craft' : ''}"
+      data-loot-pair="${craft.id}" data-loot-id="${loot.id}">
+      <div class="loot-card-head">
+        <span class="loot-card-zone">${zoneLabel}</span>
+        <span class="loot-card-meter" data-bind="loot-count">${count} / ${craft.shardCost}</span>
       </div>
-      <div class="loot-entry-pipeline">
-        <div class="loot-entry-node is-material">
-          <div class="loot-entry-icon">${loot.icon}</div>
-          <div class="loot-entry-meta">
-            <span class="loot-entry-label">${ui.lootDropsIn}</span>
-            <span class="loot-entry-name">${lootName}</span>
+      <div class="loot-card-flow">
+        <div class="loot-card-tile is-shard">
+          <span class="loot-card-emoji">${loot.icon}</span>
+          <div class="loot-card-tile-meta">
+            <span class="loot-card-tile-label">${ui.lootDropsIn}</span>
+            <span class="loot-card-tile-name">${lootName}</span>
           </div>
         </div>
-        <div class="loot-entry-bridge" aria-hidden="true">
-          <div class="loot-progress-wrap">
-            <div class="loot-progress-bar" data-bind="loot-progress" style="width:${progress}%"></div>
-          </div>
-          <span class="loot-entry-pct" data-bind="loot-pct">${progress}%</span>
-        </div>
-        <div class="loot-entry-node is-craft">
-          <div class="loot-entry-icon">${craft.icon}</div>
-          <div class="loot-entry-meta">
-            <span class="loot-entry-label">${ui.lootCraftsInto}</span>
-            <span class="loot-entry-name">${craftName}</span>
+        <span class="loot-card-arrow" aria-hidden="true">→</span>
+        <div class="loot-card-tile is-gear">
+          <span class="loot-card-emoji">${craft.icon}</span>
+          <div class="loot-card-tile-meta">
+            <span class="loot-card-tile-label">${ui.lootCraftsInto}</span>
+            <span class="loot-card-tile-name">${craftName}</span>
           </div>
         </div>
       </div>
-      <p class="loot-entry-hint">${craftHint}</p>
+      <div class="loot-card-progress-row">
+        <div class="loot-progress-track">
+          <div class="loot-progress-bar" data-bind="loot-progress" style="width:${progress}%"></div>
+        </div>
+        <span class="loot-card-pct" data-bind="loot-pct">${progress}%</span>
+      </div>
+      <p class="loot-card-desc">${craftHint}</p>
       ${action}
     </div>
   `;
@@ -361,7 +361,7 @@ function buildLootWorkshopHTML(ctx: RenderContext): string {
           <span class="scroll-hint loot-scroll-hint" data-bind="loot-scroll-hint" hidden>${ui.lootWorkshopScrollHint}</span>
         </div>
         <p class="modal-desc loot-modal-desc">${ui.zoneLootWorkshopDesc}</p>
-        <div class="loot-entry-list" data-scroll-panel="loot-workshop">${cards}</div>
+        <div class="loot-card-list" data-scroll-panel="loot-workshop">${cards}</div>
       </div>
     </div>
   `;
@@ -393,6 +393,11 @@ function patchLootWorkshop(root: HTMLElement, ctx: RenderContext): void {
     const zoneUnlocked = state.unlockedZones.includes(loot.zoneId);
     card.classList.toggle('is-owned', owned);
     card.classList.toggle('is-locked', !zoneUnlocked);
+    if (zoneUnlocked && !owned) {
+      card.classList.toggle('can-craft', canCraftLootItem(state, theme, craft.id));
+    } else {
+      card.classList.remove('can-craft');
+    }
 
     const count = getLootCount(state, loot.id);
     const progress = Math.min(100, Math.round((count / craft.shardCost) * 100));
@@ -410,7 +415,7 @@ function patchLootWorkshop(root: HTMLElement, ctx: RenderContext): void {
     if (owned || !zoneUnlocked) continue;
 
     const canCraft = canCraftLootItem(state, theme, craft.id);
-    const btn = card.querySelector<HTMLButtonElement>('.loot-entry-action');
+    const btn = card.querySelector<HTMLButtonElement>('.loot-card-craft');
     if (btn) {
       btn.disabled = !canCraft;
       btn.classList.toggle('btn-ready', canCraft);

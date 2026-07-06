@@ -317,11 +317,11 @@ export const tr: GameLocale = {
     reset: 'Defter sıfırlandı. Yeni mali yıl başladı.',
   },
   patchNotes: {
-    headline: 'Görev sırasında bölge değiştirme açığı kapatıldı.',
+    headline: 'Bölge ganimet atölyesi yenilendi ve görev exploit\'i kapatıldı.',
     items: [
-      'Görev başladıktan sonra bölge değiştirilemez — ödül gönderilen bölgeye göre hesaplanır',
-      '20 İtibar yarışı tablosu kaldırıldı, tek genel sıralama kaldı',
-      'Bölge ganimet atölyesi kaydırılabilir ve mobil uyumlu',
+      'Bölge ganimet kartları sadeleştirildi — daha okunaklı akış ve ilerleme çubuğu',
+      'Görev sırasında bölge değiştirilemez, ödül gönderilen bölgeye göre hesaplanır',
+      '20 İtibar yarışı tablosu kaldırıldı',
       'Küçük düzenlemeler ve hata düzeltmeleri',
     ],
   },

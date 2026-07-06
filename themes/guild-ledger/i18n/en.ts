@@ -317,11 +317,11 @@ export const en: GameLocale = {
     reset: 'Ledger reset. New fiscal year.',
   },
   patchNotes: {
-    headline: 'Fixed zone-switch exploit during expeditions.',
+    headline: 'Zone loot workshop refresh and expedition exploit fix.',
     items: [
-      'Zones lock when a quest starts — rewards always use the zone you sent from',
-      'Removed the 20 Rep race tab — overall leaderboard only',
-      'Zone loot workshop is scrollable and mobile-friendly',
+      'Cleaner loot cards with a clearer shard → gear flow and progress bar',
+      'Zones lock during quests — rewards use the zone you sent from',
+      'Removed the 20 Rep race tab',
       'Minor fixes and polish',
     ],
   },
