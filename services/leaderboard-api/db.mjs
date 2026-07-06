@@ -62,6 +62,20 @@ function createFileStore() {
         .sort((a, b) => a.reachedAt - b.reachedAt)
         .slice(0, limit);
     },
+    async deleteProfile(id) {
+      const db = readFileDb();
+      if (!db.profiles[id]) return false;
+      delete db.profiles[id];
+      delete db.prestige100Race[id];
+      writeFileDb(db);
+      return true;
+    },
+    async deleteProfileByUsername(username) {
+      const db = readFileDb();
+      const profile = Object.values(db.profiles).find((p) => p.username === username);
+      if (!profile) return false;
+      return this.deleteProfile(profile.id);
+    },
     async close() {},
   };
 }
@@ -128,6 +142,16 @@ async function createMongoStore(uri) {
         .sort({ reachedAt: 1 })
         .limit(limit)
         .toArray();
+    },
+    async deleteProfile(id) {
+      const result = await col.deleteOne({ id });
+      await raceCol.deleteOne({ id });
+      return result.deletedCount > 0;
+    },
+    async deleteProfileByUsername(username) {
+      const profile = await col.findOne({ username });
+      if (!profile) return false;
+      return this.deleteProfile(profile.id);
     },
     async close() {
       await client.close();

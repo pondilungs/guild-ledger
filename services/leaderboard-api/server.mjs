@@ -5,9 +5,16 @@ const PORT = Number(process.env.PORT ?? process.env.LEADERBOARD_PORT ?? 8787);
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+function isAdmin(req) {
+  const token = process.env.LEADERBOARD_ADMIN_TOKEN?.trim();
+  if (!token) return false;
+  const auth = req.headers.authorization ?? '';
+  return auth === `Bearer ${token}`;
+}
 
 function send(res, status, body) {
   const payload = JSON.stringify(body);
@@ -59,9 +66,39 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    const usernameDeleteMatch = url.pathname.match(/^\/admin\/profiles\/by-username\/([^/]+)$/);
+    if (usernameDeleteMatch && req.method === 'DELETE') {
+      if (!isAdmin(req)) {
+        send(res, 401, { error: 'unauthorized' });
+        return;
+      }
+      const username = decodeURIComponent(usernameDeleteMatch[1]);
+      const deleted = await store.deleteProfileByUsername(username);
+      if (!deleted) {
+        send(res, 404, { error: 'not_found' });
+        return;
+      }
+      send(res, 200, { deleted: true, username });
+      return;
+    }
+
     const profileMatch = url.pathname.match(/^\/profiles\/([^/]+)$/);
     if (profileMatch) {
       const id = decodeURIComponent(profileMatch[1]);
+
+      if (req.method === 'DELETE') {
+        if (!isAdmin(req)) {
+          send(res, 401, { error: 'unauthorized' });
+          return;
+        }
+        const deleted = await store.deleteProfile(id);
+        if (!deleted) {
+          send(res, 404, { error: 'not_found' });
+          return;
+        }
+        send(res, 200, { deleted: true, id });
+        return;
+      }
 
       if (req.method === 'GET') {
         const profile = await store.getProfile(id);

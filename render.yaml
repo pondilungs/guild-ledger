@@ -12,3 +12,5 @@ services:
         value: production
       - key: MONGODB_DB_NAME
         value: guild-ledger
+      - key: LEADERBOARD_ADMIN_TOKEN
+        value: gl-del-20260706-a7f2
