@@ -199,6 +199,8 @@ export const en: GameLocale = {
     craftWithLoot: 'Craft',
     lootOwned: 'Owned',
     lootZoneLocked: 'Unlock zone',
+    lootCraftsInto: 'Crafts into',
+    lootDropsIn: 'Drops in',
   },
   zones: {
     rat_cellar: { name: 'Rat Cellar', description: 'Cheap deaths for fresh adventurers.' },
@@ -226,12 +228,12 @@ export const en: GameLocale = {
     tax_evasion: { name: 'Tax Evasion', description: '+12% gold income (late game)' },
   },
   zoneLoot: {
-    rat_whisker: { name: 'Rat Whisker', description: 'Odd loot from the cellar.' },
-    iron_shard: { name: 'Iron Shard', description: 'Rare scrap from the goblin mine.' },
-    bone_chip: { name: 'Bone Chip', description: 'Sifted from crypt remains.' },
-    dragon_scale: { name: 'Dragon Scale', description: 'Flaked off vault dragons.' },
-    hell_ember: { name: 'Hell Ember', description: 'Ember seeping from the infernal ledger.' },
-    star_dust: { name: 'Stardust', description: 'Dust from the celestial audit.' },
+    rat_whisker: { name: 'Rat Whisker', description: 'Collect to craft the Rat Trap.' },
+    iron_shard: { name: 'Iron Shard', description: 'Collect to craft the Goblin Pickaxe.' },
+    bone_chip: { name: 'Bone Chip', description: 'Collect to craft the Crypt Lantern.' },
+    dragon_scale: { name: 'Dragon Scale', description: 'Collect to craft the Vault Key.' },
+    hell_ember: { name: 'Hell Ember', description: 'Collect to craft the Infernal Stamp.' },
+    star_dust: { name: 'Stardust', description: 'Collect to craft the Audit Seal.' },
   },
   zoneLootCrafts: {
     rat_trap: { name: 'Rat Trap', description: 'Permanent +4% gold income.' },

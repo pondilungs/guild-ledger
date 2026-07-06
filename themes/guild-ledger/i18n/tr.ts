@@ -199,6 +199,8 @@ export const tr: GameLocale = {
     craftWithLoot: 'Üret',
     lootOwned: 'Sahipsin',
     lootZoneLocked: 'Bölgeyi aç',
+    lootCraftsInto: 'Üretir',
+    lootDropsIn: 'Düşer',
   },
   zones: {
     rat_cellar: { name: 'Sıçan Bodrumu', description: 'Yeni maceracılar için ucuz ölüm.' },
@@ -226,12 +228,12 @@ export const tr: GameLocale = {
     tax_evasion: { name: 'Vergi Kaçırma', description: '+12% altın geliri (geç oyun)' },
   },
   zoneLoot: {
-    rat_whisker: { name: 'Sıçan Bıyığı', description: 'Bodrumdan düşen tuhaf ganimet.' },
-    iron_shard: { name: 'Demir Parçası', description: 'Goblin madeninden çıkan nadir hurda.' },
-    bone_chip: { name: 'Kemik Parçası', description: 'Mahzen kemiklerinden süzülen parça.' },
-    dragon_scale: { name: 'Ejderha Pulu', description: 'Kasadaki ejderhadan kopan pul.' },
-    hell_ember: { name: 'Cehennem Koru', description: 'Cehennem defterinden sızan kor.' },
-    star_dust: { name: 'Yıldız Tozu', description: 'Göksel denetimden dökülen toz.' },
+    rat_whisker: { name: 'Sıçan Bıyığı', description: 'Sıçan Tuzağı üretmek için toplanır.' },
+    iron_shard: { name: 'Demir Parçası', description: 'Goblin Kazması üretmek için toplanır.' },
+    bone_chip: { name: 'Kemik Parçası', description: 'Mahzen Feneri üretmek için toplanır.' },
+    dragon_scale: { name: 'Ejderha Pulu', description: 'Kasa Anahtarı üretmek için toplanır.' },
+    hell_ember: { name: 'Cehennem Koru', description: 'Cehennem Mühürü üretmek için toplanır.' },
+    star_dust: { name: 'Yıldız Tozu', description: 'Denetim Mührü üretmek için toplanır.' },
   },
   zoneLootCrafts: {
     rat_trap: { name: 'Sıçan Tuzağı', description: 'Kalıcı +%4 altın geliri.' },

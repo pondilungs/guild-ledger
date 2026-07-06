@@ -101,6 +101,32 @@ export function craftLootItem(
   };
 }
 
+export function getLootCraftPair(
+  theme: ThemeConfig,
+  lootId: string,
+): { loot: NonNullable<ThemeConfig['zoneLoot']>[number]; craft: NonNullable<ThemeConfig['zoneLootCrafts']>[number] } | null {
+  const loot = theme.zoneLoot?.find((l) => l.id === lootId);
+  if (!loot) return null;
+  const craft = theme.zoneLootCrafts?.find((c) => c.id === loot.craftId || c.lootId === loot.id);
+  if (!craft) return null;
+  return { loot, craft };
+}
+
+export function getZoneLootPairs(theme: ThemeConfig): Array<{
+  loot: NonNullable<ThemeConfig['zoneLoot']>[number];
+  craft: NonNullable<ThemeConfig['zoneLootCrafts']>[number];
+}> {
+  const pairs: Array<{
+    loot: NonNullable<ThemeConfig['zoneLoot']>[number];
+    craft: NonNullable<ThemeConfig['zoneLootCrafts']>[number];
+  }> = [];
+  for (const loot of theme.zoneLoot ?? []) {
+    const pair = getLootCraftPair(theme, loot.id);
+    if (pair) pairs.push(pair);
+  }
+  return pairs;
+}
+
 export function hasAnyLootProgress(state: GameState, theme: ThemeConfig): boolean {
   if (state.lootCraftsOwned.length > 0) return true;
   for (const lootId of Object.keys(state.lootInventory)) {

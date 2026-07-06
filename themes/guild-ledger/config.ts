@@ -3,7 +3,7 @@ import type { ThemeConfig } from '../../packages/engine/config/ThemeSchema.ts';
 export const guildLedgerTheme: ThemeConfig = {
   id: 'guild-ledger',
   title: 'Guild Ledger',
-  version: '0.5.0',
+  version: '0.5.1',
   tagline: 'Sen kahraman değilsin — lonca muhasebecisisin. Partiler ölürken sen kâr yazarsın.',
   startingGold: 15,
   startingParties: [{ id: 'squire', level: 1 }],
@@ -283,6 +283,7 @@ export const guildLedgerTheme: ThemeConfig = {
     {
       id: 'rat_whisker',
       zoneId: 'rat_cellar',
+      craftId: 'rat_trap',
       name: 'Sıçan Bıyığı',
       icon: '🪶',
       description: 'Bodrumdan düşen tuhaf ganimet.',
@@ -291,6 +292,7 @@ export const guildLedgerTheme: ThemeConfig = {
     {
       id: 'iron_shard',
       zoneId: 'goblin_mine',
+      craftId: 'goblin_pickaxe',
       name: 'Demir Parçası',
       icon: '🔩',
       description: 'Goblin madeninden çıkan nadir hurda.',
@@ -299,6 +301,7 @@ export const guildLedgerTheme: ThemeConfig = {
     {
       id: 'bone_chip',
       zoneId: 'haunted_crypt',
+      craftId: 'crypt_lantern',
       name: 'Kemik Parçası',
       icon: '🦴',
       description: 'Mahzen kemiklerinden süzülen parça.',
@@ -307,6 +310,7 @@ export const guildLedgerTheme: ThemeConfig = {
     {
       id: 'dragon_scale',
       zoneId: 'dragon_vault',
+      craftId: 'vault_key',
       name: 'Ejderha Pulu',
       icon: '🐲',
       description: 'Kasadaki ejderhadan kopan pul.',
@@ -315,6 +319,7 @@ export const guildLedgerTheme: ThemeConfig = {
     {
       id: 'hell_ember',
       zoneId: 'infernal_ledger',
+      craftId: 'infernal_stamp',
       name: 'Cehennem Koru',
       icon: '🔥',
       description: 'Cehennem defterinden sızan kor.',
@@ -323,6 +328,7 @@ export const guildLedgerTheme: ThemeConfig = {
     {
       id: 'star_dust',
       zoneId: 'celestial_audit',
+      craftId: 'audit_seal',
       name: 'Yıldız Tozu',
       icon: '✨',
       description: 'Göksel denetimden dökülen toz.',

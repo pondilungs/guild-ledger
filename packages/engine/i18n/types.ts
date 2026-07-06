@@ -84,6 +84,8 @@ export interface GameLocale {
     craftWithLoot: string;
     lootOwned: string;
     lootZoneLocked: string;
+    lootCraftsInto: string;
+    lootDropsIn: string;
   };
   zones: Record<string, LocalizedEntity>;
   parties: Record<string, LocalizedEntity>;

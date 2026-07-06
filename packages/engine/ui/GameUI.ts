@@ -10,6 +10,7 @@ import { calcShopCost, canBuyShopItem, getShopLevel } from '../systems/PrestigeS
 import {
   canCraftLootItem,
   getLootCount,
+  getZoneLootPairs,
   isLootCraftOwned,
 } from '../systems/ZoneLootSystem.ts';
 import type { LocaleManager, LocaleId } from '../core/LocaleManager.ts';
@@ -209,58 +210,85 @@ function lootWorkshopAvailable(state: GameState, theme: ThemeConfig): boolean {
   return state.unlockedZones.some((z) => lootZones.has(z));
 }
 
-function buildLootWorkshopHTML(ctx: RenderContext): string {
+function buildLootPairCard(
+  ctx: RenderContext,
+  loot: NonNullable<ThemeConfig['zoneLoot']>[number],
+  craft: NonNullable<ThemeConfig['zoneLootCrafts']>[number],
+): string {
   const { state, theme, locale, ui } = ctx;
-  const crafts = theme.zoneLootCrafts ?? [];
-  const lootDefs = theme.zoneLoot ?? [];
-  if (crafts.length === 0) return '';
+  const lootLoc = locale.zoneLoot[loot.id];
+  const craftLoc = locale.zoneLootCrafts[craft.id];
+  const zoneLoc = locale.zones[loot.zoneId];
+  const owned = isLootCraftOwned(state, craft.id);
+  const zoneUnlocked = state.unlockedZones.includes(loot.zoneId);
+  const count = getLootCount(state, loot.id);
+  const canCraft = canCraftLootItem(state, theme, craft.id);
+  const progress = Math.min(100, Math.round((count / craft.shardCost) * 100));
 
-  const shardRows = lootDefs
-    .filter((l) => state.unlockedZones.includes(l.zoneId))
-    .map((loot) => {
-      const loc = locale.zoneLoot[loot.id];
-      const count = getLootCount(state, loot.id);
-      return `<span class="loot-shard-chip">${loot.icon} ${loc?.name ?? loot.name}: <strong>${count}</strong></span>`;
-    })
-    .join('');
-
-  const cards = crafts.map((def) => {
-    const loc = locale.zoneLootCrafts[def.id];
-    const lootLoc = locale.zoneLoot[def.lootId];
-    const lootDef = theme.zoneLoot?.find((l) => l.id === def.lootId);
-    const zoneLoc = locale.zones[def.zoneId];
-    const owned = isLootCraftOwned(state, def.id);
-    const zoneUnlocked = state.unlockedZones.includes(def.zoneId);
-    const count = getLootCount(state, def.lootId);
-    const canCraft = canCraftLootItem(state, theme, def.id);
-    const lootIcon = lootDef?.icon ?? '✦';
-
-    return `
-      <div class="item-card shop-item-card loot-craft-card ${owned ? 'maxed-card' : ''}" data-loot-craft-card="${def.id}">
-        <div class="item-header">
-          <span class="item-icon">${def.icon}</span>
-          <div>
-            <strong>${loc?.name ?? def.name}</strong>
-            <span class="item-zone-label">${zoneLoc?.name ?? def.zoneId}</span>
-          </div>
+  const craftPanel = owned
+    ? `<div class="loot-craft-panel owned">
+        <span class="loot-panel-tag">${ui.lootCraftsInto}</span>
+        <div class="loot-panel-head">
+          <span class="item-icon">${craft.icon}</span>
+          <strong>${craftLoc?.name ?? craft.name}</strong>
         </div>
-        <p class="item-desc">${loc?.description ?? def.description}</p>
-        ${owned
-          ? `<span class="badge maxed">${ui.lootOwned}</span>`
-          : !zoneUnlocked
-            ? `<span class="badge locked">${ui.lootZoneLocked}</span>`
-            : `<div class="buy-row">
-                <span class="loot-cost-label">${count}/${def.shardCost} ${lootIcon} ${lootLoc?.name ?? def.lootId}</span>
-                <button class="btn btn-sm ${canCraft ? 'btn-ready' : 'disabled'}"
-                  data-action="craft-zone-loot" data-loot-craft="${def.id}"
-                  ${canCraft ? '' : 'disabled'}>
-                  ${ui.craftWithLoot}
-                </button>
-              </div>`
-        }
+        <p class="item-desc">${craftLoc?.description ?? craft.description}</p>
+        <span class="badge maxed">${ui.lootOwned}</span>
+      </div>`
+    : !zoneUnlocked
+      ? `<div class="loot-craft-panel locked">
+          <span class="loot-panel-tag">${ui.lootCraftsInto}</span>
+          <div class="loot-panel-head">
+            <span class="item-icon">${craft.icon}</span>
+            <strong>${craftLoc?.name ?? craft.name}</strong>
+          </div>
+          <p class="item-desc">${craftLoc?.description ?? craft.description}</p>
+          <span class="badge locked">${ui.lootZoneLocked}</span>
+        </div>`
+      : `<div class="loot-craft-panel">
+          <span class="loot-panel-tag">${ui.lootCraftsInto}</span>
+          <div class="loot-panel-head">
+            <span class="item-icon">${craft.icon}</span>
+            <strong>${craftLoc?.name ?? craft.name}</strong>
+          </div>
+          <p class="item-desc">${craftLoc?.description ?? craft.description}</p>
+          <button class="btn btn-sm ${canCraft ? 'btn-ready' : 'disabled'}"
+            data-action="craft-zone-loot" data-loot-craft="${craft.id}"
+            ${canCraft ? '' : 'disabled'}>
+            ${ui.craftWithLoot} (${craft.shardCost} ${loot.icon})
+          </button>
+        </div>`;
+
+  return `
+    <div class="loot-pair-card ${owned ? 'is-owned' : ''} ${!zoneUnlocked ? 'is-locked' : ''}"
+      data-loot-pair="${craft.id}" data-loot-id="${loot.id}">
+      <div class="loot-pair-zone">${zoneLoc?.name ?? loot.zoneId}</div>
+      <div class="loot-pair-flow">
+        <div class="loot-shard-panel">
+          <span class="loot-panel-tag">${ui.lootDropsIn}</span>
+          <div class="loot-panel-head">
+            <span class="item-icon">${loot.icon}</span>
+            <strong>${lootLoc?.name ?? loot.name}</strong>
+          </div>
+          <p class="item-desc">${lootLoc?.description ?? loot.description}</p>
+          <div class="loot-progress-wrap">
+            <div class="loot-progress-bar" data-bind="loot-progress" style="width:${progress}%"></div>
+          </div>
+          <span class="loot-progress-label" data-bind="loot-count">${count} / ${craft.shardCost}</span>
+        </div>
+        <div class="loot-pair-arrow" aria-hidden="true">→</div>
+        ${craftPanel}
       </div>
-    `;
-  }).join('');
+    </div>
+  `;
+}
+
+function buildLootWorkshopHTML(ctx: RenderContext): string {
+  const { theme, ui } = ctx;
+  const pairs = getZoneLootPairs(theme);
+  if (pairs.length === 0) return '';
+
+  const cards = pairs.map(({ loot, craft }) => buildLootPairCard(ctx, loot, craft)).join('');
 
   return `
     <div class="modal-backdrop" data-loot-workshop data-modal-backdrop>
@@ -270,11 +298,7 @@ function buildLootWorkshopHTML(ctx: RenderContext): string {
           <button class="modal-close" data-action="close-loot-workshop" type="button" aria-label="${ui.close}">×</button>
         </div>
         <p class="modal-desc">${ui.zoneLootWorkshopDesc}</p>
-        <div class="loot-shard-bar">
-          <span class="loot-shard-label">${ui.zoneLootShards}:</span>
-          ${shardRows || '<span class="loot-shard-empty">—</span>'}
-        </div>
-        <div class="prestige-shop-list loot-craft-list">${cards}</div>
+        <div class="loot-pair-list">${cards}</div>
       </div>
     </div>
   `;
@@ -285,49 +309,35 @@ function computeLootStructureKey(ctx: RenderContext): string {
 }
 
 function patchLootWorkshop(root: HTMLElement, ctx: RenderContext): void {
-  const { state, theme, ui } = ctx;
+  const { state, theme } = ctx;
 
-  for (const def of theme.zoneLootCrafts ?? []) {
-    const owned = isLootCraftOwned(state, def.id);
-    const zoneUnlocked = state.unlockedZones.includes(def.zoneId);
-    const card = root.querySelector(`[data-loot-craft-card="${def.id}"]`);
+  for (const { loot, craft } of getZoneLootPairs(theme)) {
+    const card = root.querySelector(`[data-loot-pair="${craft.id}"]`);
     if (!card) continue;
 
-    if (owned) {
-      card.classList.add('maxed-card');
-      continue;
-    }
-    if (!zoneUnlocked) continue;
+    const owned = isLootCraftOwned(state, craft.id);
+    const zoneUnlocked = state.unlockedZones.includes(loot.zoneId);
+    card.classList.toggle('is-owned', owned);
+    card.classList.toggle('is-locked', !zoneUnlocked);
 
-    const count = getLootCount(state, def.lootId);
-    const canCraft = canCraftLootItem(state, theme, def.id);
-    const costLabel = card.querySelector('.loot-cost-label');
-    const lootDef = theme.zoneLoot?.find((l) => l.id === def.lootId);
-    const lootIcon = lootDef?.icon ?? '✦';
-    const lootName = ctx.locale.zoneLoot[def.lootId]?.name ?? def.lootId;
-    const costText = `${count}/${def.shardCost} ${lootIcon} ${lootName}`;
-    if (costLabel && costLabel.textContent !== costText) costLabel.textContent = costText;
+    const count = getLootCount(state, loot.id);
+    const progress = Math.min(100, Math.round((count / craft.shardCost) * 100));
+    const countEl = card.querySelector('[data-bind="loot-count"]');
+    const countText = `${count} / ${craft.shardCost}`;
+    if (countEl && countEl.textContent !== countText) countEl.textContent = countText;
 
+    const bar = card.querySelector<HTMLElement>('[data-bind="loot-progress"]');
+    if (bar) bar.style.width = `${progress}%`;
+
+    if (owned || !zoneUnlocked) continue;
+
+    const canCraft = canCraftLootItem(state, theme, craft.id);
     const btn = card.querySelector<HTMLButtonElement>('[data-action="craft-zone-loot"]');
     if (btn) {
       btn.disabled = !canCraft;
       btn.classList.toggle('btn-ready', canCraft);
       btn.classList.toggle('disabled', !canCraft);
     }
-  }
-
-  const shardBar = root.querySelector('.loot-shard-bar');
-  if (shardBar) {
-    const chips = (theme.zoneLoot ?? [])
-      .filter((l) => state.unlockedZones.includes(l.zoneId))
-      .map((loot) => {
-        const loc = ctx.locale.zoneLoot[loot.id];
-        const count = getLootCount(state, loot.id);
-        return `<span class="loot-shard-chip">${loot.icon} ${loc?.name ?? loot.name}: <strong>${count}</strong></span>`;
-      })
-      .join('');
-    const inner = `${`<span class="loot-shard-label">${ui.zoneLootShards}:</span>`}${chips || '<span class="loot-shard-empty">—</span>'}`;
-    if (shardBar.innerHTML !== inner) shardBar.innerHTML = inner;
   }
 }
 

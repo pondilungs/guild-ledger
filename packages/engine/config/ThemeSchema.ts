@@ -87,6 +87,8 @@ export type ZoneLootCraftEffectType =
 export interface ZoneLootDef {
   id: string;
   zoneId: string;
+  /** Craft unlocked when enough of this loot is collected. */
+  craftId: string;
   name: string;
   icon: string;
   description: string;
