@@ -37,6 +37,21 @@ export function migrateState(state: GameState, theme: ThemeConfig): GameState {
     }
   }
 
+  const lootInventory = { ...(state.lootInventory ?? {}) };
+  const LOOT_ID_MIGRATION: Record<string, string> = {
+    rat_whisker: 'trap_wire',
+    bone_chip: 'tomb_wax',
+    dragon_scale: 'dragon_fang',
+    hell_ember: 'hell_ink',
+    star_dust: 'audit_wax',
+  };
+  for (const [oldId, newId] of Object.entries(LOOT_ID_MIGRATION)) {
+    if (lootInventory[oldId]) {
+      lootInventory[newId] = (lootInventory[newId] ?? 0) + lootInventory[oldId];
+      delete lootInventory[oldId];
+    }
+  }
+
   return {
     ...state,
     parties,
@@ -44,7 +59,7 @@ export function migrateState(state: GameState, theme: ThemeConfig): GameState {
     prestigeLifetime,
     prestigePoints,
     prestigeShop,
-    lootInventory: state.lootInventory ?? {},
+    lootInventory,
     lootCraftsOwned: state.lootCraftsOwned ?? [],
   };
 }
