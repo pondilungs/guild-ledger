@@ -11,6 +11,7 @@
     "build": "npm run build -w @game-lab/web",
     "build:itch": "npm run build && node scripts/package-itch.mjs",
     "build:itch:live": "test -n \"$VITE_LEADERBOARD_URL\" || (echo 'Set VITE_LEADERBOARD_URL first' && exit 1); npm run build:itch",
+    "upload:itch": "node scripts/upload-itch.mjs",
     "preview": "npm run preview -w @game-lab/web",
     "analytics": "node scripts/export-analytics.mjs",
     "leaderboard": "node services/leaderboard-api/server.mjs"
