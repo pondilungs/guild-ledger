@@ -10,7 +10,8 @@ const cors = {
 };
 
 function isAdmin(req) {
-  const token = process.env.LEADERBOARD_ADMIN_TOKEN?.trim() || 'gl-del-20260706-a7f2';
+  const token = process.env.LEADERBOARD_ADMIN_TOKEN?.trim();
+  if (!token) return false;
   const auth = req.headers.authorization ?? '';
   return auth === `Bearer ${token}`;
 }
