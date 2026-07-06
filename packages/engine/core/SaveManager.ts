@@ -37,7 +37,16 @@ export function migrateState(state: GameState, theme: ThemeConfig): GameState {
     }
   }
 
-  return { ...state, parties, upgrades, prestigeLifetime, prestigePoints, prestigeShop };
+  return {
+    ...state,
+    parties,
+    upgrades,
+    prestigeLifetime,
+    prestigePoints,
+    prestigeShop,
+    lootInventory: state.lootInventory ?? {},
+    lootCraftsOwned: state.lootCraftsOwned ?? [],
+  };
 }
 
 export function loadGame(theme: ThemeConfig): GameState | null {

@@ -77,6 +77,35 @@ export interface ClickBoostDef {
   tapGoldFactor: number;
 }
 
+export type ZoneLootCraftEffectType =
+  | 'gold_mult_perm'
+  | 'dps_mult_perm'
+  | 'death_reduce_perm'
+  | 'offline_mult_perm'
+  | 'quest_gold_perm';
+
+export interface ZoneLootDef {
+  id: string;
+  zoneId: string;
+  name: string;
+  icon: string;
+  description: string;
+  /** Per-kill drop probability (e.g. 0.0012 ≈ 0.12%). */
+  dropChancePerKill: number;
+}
+
+export interface ZoneLootCraftDef {
+  id: string;
+  lootId: string;
+  zoneId: string;
+  name: string;
+  icon: string;
+  description: string;
+  shardCost: number;
+  effectType: ZoneLootCraftEffectType;
+  effectValue: number;
+}
+
 export interface ThemeConfig {
   id: string;
   title: string;
@@ -91,5 +120,7 @@ export interface ThemeConfig {
   upgrades: UpgradeDef[];
   prestige: PrestigeDef;
   prestigeShop?: PrestigeShopItemDef[];
+  zoneLoot?: ZoneLootDef[];
+  zoneLootCrafts?: ZoneLootCraftDef[];
   offlineCapHours: number;
 }

@@ -78,11 +78,19 @@ export interface GameLocale {
     prestige100RaceDesc: string;
     prestige100ReachedAt: string;
     prestige100Empty: string;
+    zoneLootWorkshop: string;
+    zoneLootWorkshopDesc: string;
+    zoneLootShards: string;
+    craftWithLoot: string;
+    lootOwned: string;
+    lootZoneLocked: string;
   };
   zones: Record<string, LocalizedEntity>;
   parties: Record<string, LocalizedEntity>;
   upgrades: Record<string, LocalizedEntity>;
   prestigeShop: Record<string, LocalizedEntity>;
+  zoneLoot: Record<string, LocalizedEntity>;
+  zoneLootCrafts: Record<string, LocalizedEntity>;
   flavor: FlavorText;
   tutorial: TutorialStep[];
   logs: {

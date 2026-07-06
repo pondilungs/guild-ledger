@@ -1,7 +1,7 @@
-=== GUILD LEDGER v0.1.0-soft — itch.io UPLOAD ===
+=== GUILD LEDGER v0.4.5 — itch.io SAYFA METİNLERİ ===
 
 DOSYALAR (release/ klasöründe):
-  • guild-ledger-itch.zip  ← HTML upload
+  • guild-ledger-itch.zip  ← HTML upload (güncel build)
   • guild-ledger-cover.jpg ← Cover image
 
 TITLE:
@@ -16,38 +16,122 @@ guild-ledger
 KIND: HTML
 
 TAGS:
-idle, incremental, rpg, management, fantasy, clicker, singleplayer, web, tycoon
+idle, incremental, rpg, management, fantasy, clicker, singleplayer, web, tycoon, leaderboard
 
 PRICE: $0 (Name your own price, min $0)
 
-=== SHORT DESCRIPTION ===
-You are not the hero. You are the guild accountant. Send parties to die for profit.
+=== SHORT DESCRIPTION (EN) ===
+You are not the hero. You are the guild accountant. Rent adventurers, collect profit when they die, prestige for reputation — and climb the online leaderboard.
 
-=== FULL DESCRIPTION ===
-[b]Guild Ledger[/b] — Soft Launch v0.1.0
+=== SHORT DESCRIPTION (TR) ===
+Kahraman değilsin — lonca muhasebecisisin. Kiracı maceracılar kirala, ölünce kâr yaz, itibar kazan ve online sıralamada yarış.
+
+=== FULL DESCRIPTION (EN) — itch.io'ya yapıştır ===
+NOT: itch.io Edit → Description alanına yapıştır. [b] etiketleri görünüyorsa
+aşağıdaki "PLAIN" sürümü kullan (BBCode'suz).
+
+--- BBCode sürümü (çoğu sayfada çalışır) ---
+[b]Guild Ledger[/b] — v0.4.5
 
 You are NOT the hero. You are the guild accountant.
 
-Rent adventurers, send expeditions, collect rent when they die, and grow your guild empire while gold flows in.
+Rent adventurers, send expeditions, collect rent when they die, and grow your guild empire while gold flows in. Every death is a line item. Every quest is a receipt.
 
 [b]How to play[/b]
 • Hire party members — passive gold every second
 • Send expeditions — burst profit, death risk
 • Upgrade the guild — multiply income
-• Unlock zones — higher risk, higher rent
-• Prestige — permanent reputation bonuses
-• Click [b]Tahsil Et[/b] — 2× income boost
+• Unlock 6 zones — from Rat Cellar to Celestial Audit
+• Prestige — reset for permanent reputation bonuses
+• Tap [b]Collect[/b] — 2× income boost (30s on / 30s cooldown)
+• Spend prestige in the [b]Reputation Market[/b] — permanent upgrades without hurting your leaderboard rank
+
+[b]Online features[/b]
+• Global leaderboard — compete by lifetime reputation
+• [b]First to 20 Rep[/b] race — who reaches 20 lifetime reputation first?
+• Pick a username and sync your profile automatically
 
 [b]Features[/b]
-• Browser idle/incremental RPG
-• Mobile-friendly
+• Browser idle/incremental RPG — no download
+• Turkish & English UI (switch anytime)
+• Fullscreen dashboard layout
+• Flavor event log — deaths, hires, and profits with personality
 • Offline earnings (8h cap)
-• Auto-save
-• Tutorial for new players
+• Auto-save + tutorial for new players
+• Mobile-friendly
 
-[b]Soft launch[/b] — We're testing balance and retention. Feedback appreciated!
+[b]v0.4.5[/b] — Balance tweaks, leaderboard race at 20 reputation, prestige shop, and polish.
+
+Feedback and bug reports welcome — we're actively updating!
 
 Controls: Mouse / touch
+
+--- PLAIN sürümü (BBCode görünüyorsa bunu kullan) ---
+GUILD LEDGER — v0.4.5
+
+You are NOT the hero. You are the guild accountant.
+
+Rent adventurers, send expeditions, collect rent when they die, and grow your guild empire while gold flows in. Every death is a line item. Every quest is a receipt.
+
+HOW TO PLAY
+• Hire party members — passive gold every second
+• Send expeditions — burst profit, death risk
+• Upgrade the guild — multiply income
+• Unlock 6 zones — from Rat Cellar to Celestial Audit
+• Prestige — reset for permanent reputation bonuses
+• Tap Collect — 2× income boost (30s on / 30s cooldown)
+• Spend prestige in the Reputation Market — permanent upgrades without hurting your leaderboard rank
+
+ONLINE FEATURES
+• Global leaderboard — compete by lifetime reputation
+• First to 20 Rep race — who reaches 20 lifetime reputation first?
+• Pick a username and sync your profile automatically
+
+FEATURES
+• Browser idle/incremental RPG — no download
+• Turkish & English UI (switch anytime)
+• Fullscreen dashboard layout
+• Flavor event log — deaths, hires, and profits with personality
+• Offline earnings (8h cap)
+• Auto-save + tutorial for new players
+• Mobile-friendly
+
+v0.4.5 — Balance tweaks, leaderboard race at 20 reputation, prestige shop, and polish.
+
+Feedback and bug reports welcome — we're actively updating!
+
+Controls: Mouse / touch
+
+=== FULL DESCRIPTION (TR) — isteğe bağlı ikinci dil bloğu ===
+[b]Guild Ledger[/b] — v0.4.5
+
+Sen kahraman değilsin — lonca muhasebecisisin.
+
+Maceracı kirala, gönder, ölünce kâr yaz. Her ölüm bir gider kalemi, her görev bir makbuz.
+
+[b]Nasıl oynanır[/b]
+• Parti üyesi kirala — saniyede pasif altın
+• Gönder — ani kâr, ölüm riski
+• Lonca yatırımları — geliri katla
+• 6 bölge aç — Sıçan Bodrumu'ndan Göksel Denetim'e
+• Prestige — kalıcı itibar bonusu için sıfırla
+• [b]Tahsil Et[/b] — 2× gelir (30sn açık / 30sn bekleme)
+• [b]İtibar Pazarı[/b] — harcanabilir itibarla kalıcı bonus; sıralamayı düşürmez
+
+[b]Online[/b]
+• Global sıralama — lifetime itibar
+• [b]20 İtibar[/b] yarışı — 20'ye ilk ulaşan kim?
+• Kullanıcı adı seç, profil otomatik senkronize
+
+[b]Özellikler[/b]
+• Tarayıcıda idle/incremental RPG
+• Türkçe & İngilizce arayüz
+• Tam ekran dashboard
+• Defter logları — ölüm, kiralama, kâr mesajları
+• Offline kazanç (8 saat limit)
+• Otomatik kayıt + öğretici
+
+Kontrol: Fare / dokunmatik
 
 === EMBED SETTINGS ===
 ☑ Embed in page
@@ -55,8 +139,45 @@ Viewport: 960 × 720 (or Fullscreen)
 ☑ Mobile friendly
 Scrollbars: OFF
 
-=== AFTER PUBLISH ===
-Add to game URL for tracking: ?ref=itch
-(Analytics auto-tags itch traffic)
+=== SCREENSHOT ÖNERİLERİ (henüz yoksa ekle) ===
+1. Ana dashboard — partiler + yatırımlar yan yana
+2. Sıralama modalı — Genel + 20 İtibar sekmesi
+3. İtibar Pazarı
+4. Prestige ekranı + defter logları
 
-Test: load → tutorial → hire → quest → upgrade → refresh (save check)
+=== AFTER PUBLISH / GÜNCELLEME ===
+Analytics için URL: ?ref=itch
+
+Güncelleme akışı:
+  1. npm run build:itch
+  2. itch.io → Edit project → Upload new file (guild-ledger-itch.zip)
+  3. Açıklamayı bu dosyadan kopyala
+
+Test: yükle → öğretici → kirala → gönder → sıralama → refresh (kayıt kontrolü)
+
+=== RELEASE ANNOUNCEMENTS (itch.io Community) ===
+
+TITLE:
+Guild Ledger v0.4.5 — Idle RPG where you profit from adventurer deaths
+
+BODY (rich editor'a yapıştır — kapak görselini Image ile ekle):
+---
+Hi everyone!
+
+I just released **Guild Ledger** — a browser idle/incremental RPG where you are NOT the hero. You are the guild accountant.
+
+Rent adventurers, send them on expeditions, and collect profit when they die. Upgrade your guild, unlock new zones, prestige for reputation bonuses, and spend points in the **Reputation Market** for permanent upgrades.
+
+**New in v0.4.5:**
+- Online global leaderboard (lifetime reputation)
+- "First to 20 Rep" race
+- Turkish & English UI
+- Flavor event log, offline earnings, mobile-friendly
+
+**Play free in browser (no download):**
+https://pondilungs.itch.io/guild-ledger
+
+[GÖRSEL EKLE: release/guild-ledger-cover.jpg — toolbar → image upload]
+
+I'd love feedback on balance, pacing, and the leaderboard. Thanks for playing!
+---

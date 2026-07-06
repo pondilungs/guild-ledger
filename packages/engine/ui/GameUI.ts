@@ -7,6 +7,11 @@ import { calcPartyCost, calcUpgradeCost } from '../systems/CombatSystem.ts';
 import { canUnlockZone } from '../systems/ZoneSystem.ts';
 import { canPrestige, calcPrestigePoints } from '../systems/PrestigeSystem.ts';
 import { calcShopCost, canBuyShopItem, getShopLevel } from '../systems/PrestigeShopSystem.ts';
+import {
+  canCraftLootItem,
+  getLootCount,
+  isLootCraftOwned,
+} from '../systems/ZoneLootSystem.ts';
 import type { LocaleManager, LocaleId } from '../core/LocaleManager.ts';
 import type { GameLocale } from '../i18n/types.ts';
 import type { GameState } from '../core/types.ts';
@@ -198,6 +203,158 @@ function patchPrestigeShop(root: HTMLElement, ctx: RenderContext): void {
   }
 }
 
+function lootWorkshopAvailable(state: GameState, theme: ThemeConfig): boolean {
+  if ((theme.zoneLootCrafts?.length ?? 0) === 0) return false;
+  const lootZones = new Set(theme.zoneLoot?.map((l) => l.zoneId) ?? []);
+  return state.unlockedZones.some((z) => lootZones.has(z));
+}
+
+function buildLootWorkshopHTML(ctx: RenderContext): string {
+  const { state, theme, locale, ui } = ctx;
+  const crafts = theme.zoneLootCrafts ?? [];
+  const lootDefs = theme.zoneLoot ?? [];
+  if (crafts.length === 0) return '';
+
+  const shardRows = lootDefs
+    .filter((l) => state.unlockedZones.includes(l.zoneId))
+    .map((loot) => {
+      const loc = locale.zoneLoot[loot.id];
+      const count = getLootCount(state, loot.id);
+      return `<span class="loot-shard-chip">${loot.icon} ${loc?.name ?? loot.name}: <strong>${count}</strong></span>`;
+    })
+    .join('');
+
+  const cards = crafts.map((def) => {
+    const loc = locale.zoneLootCrafts[def.id];
+    const lootLoc = locale.zoneLoot[def.lootId];
+    const lootDef = theme.zoneLoot?.find((l) => l.id === def.lootId);
+    const zoneLoc = locale.zones[def.zoneId];
+    const owned = isLootCraftOwned(state, def.id);
+    const zoneUnlocked = state.unlockedZones.includes(def.zoneId);
+    const count = getLootCount(state, def.lootId);
+    const canCraft = canCraftLootItem(state, theme, def.id);
+    const lootIcon = lootDef?.icon ?? '✦';
+
+    return `
+      <div class="item-card shop-item-card loot-craft-card ${owned ? 'maxed-card' : ''}" data-loot-craft-card="${def.id}">
+        <div class="item-header">
+          <span class="item-icon">${def.icon}</span>
+          <div>
+            <strong>${loc?.name ?? def.name}</strong>
+            <span class="item-zone-label">${zoneLoc?.name ?? def.zoneId}</span>
+          </div>
+        </div>
+        <p class="item-desc">${loc?.description ?? def.description}</p>
+        ${owned
+          ? `<span class="badge maxed">${ui.lootOwned}</span>`
+          : !zoneUnlocked
+            ? `<span class="badge locked">${ui.lootZoneLocked}</span>`
+            : `<div class="buy-row">
+                <span class="loot-cost-label">${count}/${def.shardCost} ${lootIcon} ${lootLoc?.name ?? def.lootId}</span>
+                <button class="btn btn-sm ${canCraft ? 'btn-ready' : 'disabled'}"
+                  data-action="craft-zone-loot" data-loot-craft="${def.id}"
+                  ${canCraft ? '' : 'disabled'}>
+                  ${ui.craftWithLoot}
+                </button>
+              </div>`
+        }
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="modal-backdrop" data-loot-workshop data-modal-backdrop>
+      <div class="modal-card modal-loot-workshop" role="dialog">
+        <div class="modal-header">
+          <h2 class="modal-title">${ui.zoneLootWorkshop}</h2>
+          <button class="modal-close" data-action="close-loot-workshop" type="button" aria-label="${ui.close}">×</button>
+        </div>
+        <p class="modal-desc">${ui.zoneLootWorkshopDesc}</p>
+        <div class="loot-shard-bar">
+          <span class="loot-shard-label">${ui.zoneLootShards}:</span>
+          ${shardRows || '<span class="loot-shard-empty">—</span>'}
+        </div>
+        <div class="prestige-shop-list loot-craft-list">${cards}</div>
+      </div>
+    </div>
+  `;
+}
+
+function computeLootStructureKey(ctx: RenderContext): string {
+  return `${ctx.currentLocale}|${(ctx.theme.zoneLootCrafts ?? []).map((c) => c.id).join(',')}|${ctx.state.unlockedZones.join(',')}`;
+}
+
+function patchLootWorkshop(root: HTMLElement, ctx: RenderContext): void {
+  const { state, theme, ui } = ctx;
+
+  for (const def of theme.zoneLootCrafts ?? []) {
+    const owned = isLootCraftOwned(state, def.id);
+    const zoneUnlocked = state.unlockedZones.includes(def.zoneId);
+    const card = root.querySelector(`[data-loot-craft-card="${def.id}"]`);
+    if (!card) continue;
+
+    if (owned) {
+      card.classList.add('maxed-card');
+      continue;
+    }
+    if (!zoneUnlocked) continue;
+
+    const count = getLootCount(state, def.lootId);
+    const canCraft = canCraftLootItem(state, theme, def.id);
+    const costLabel = card.querySelector('.loot-cost-label');
+    const lootDef = theme.zoneLoot?.find((l) => l.id === def.lootId);
+    const lootIcon = lootDef?.icon ?? '✦';
+    const lootName = ctx.locale.zoneLoot[def.lootId]?.name ?? def.lootId;
+    const costText = `${count}/${def.shardCost} ${lootIcon} ${lootName}`;
+    if (costLabel && costLabel.textContent !== costText) costLabel.textContent = costText;
+
+    const btn = card.querySelector<HTMLButtonElement>('[data-action="craft-zone-loot"]');
+    if (btn) {
+      btn.disabled = !canCraft;
+      btn.classList.toggle('btn-ready', canCraft);
+      btn.classList.toggle('disabled', !canCraft);
+    }
+  }
+
+  const shardBar = root.querySelector('.loot-shard-bar');
+  if (shardBar) {
+    const chips = (theme.zoneLoot ?? [])
+      .filter((l) => state.unlockedZones.includes(l.zoneId))
+      .map((loot) => {
+        const loc = ctx.locale.zoneLoot[loot.id];
+        const count = getLootCount(state, loot.id);
+        return `<span class="loot-shard-chip">${loot.icon} ${loc?.name ?? loot.name}: <strong>${count}</strong></span>`;
+      })
+      .join('');
+    const inner = `${`<span class="loot-shard-label">${ui.zoneLootShards}:</span>`}${chips || '<span class="loot-shard-empty">—</span>'}`;
+    if (shardBar.innerHTML !== inner) shardBar.innerHTML = inner;
+  }
+}
+
+function syncLootWorkshop(
+  root: HTMLElement,
+  ctx: RenderContext,
+  open: boolean,
+  lootKeyRef: { key: string },
+): void {
+  const existing = root.querySelector('[data-loot-workshop]');
+  if (!open) {
+    existing?.remove();
+    lootKeyRef.key = '';
+    return;
+  }
+
+  const structureKey = computeLootStructureKey(ctx);
+  if (!existing || structureKey !== lootKeyRef.key) {
+    existing?.remove();
+    root.insertAdjacentHTML('beforeend', buildLootWorkshopHTML(ctx));
+    lootKeyRef.key = structureKey;
+    return;
+  }
+
+  patchLootWorkshop(root, ctx);
+}
+
 function syncPrestigeShop(
   root: HTMLElement,
   ctx: RenderContext,
@@ -281,6 +438,9 @@ function buildHTML(ctx: RenderContext): string {
             <button class="lang-btn ${currentLocale === 'en' ? 'active' : ''}" data-action="set-locale" data-locale="en" type="button">EN</button>
           </div>
           <div class="social-bar">
+            ${lootWorkshopAvailable(state, theme) ? `
+              <button class="btn btn-sm btn-social btn-loot-workshop" data-action="open-loot-workshop" type="button">🧲 ${ui.zoneLootWorkshop}</button>
+            ` : ''}
             ${(theme.prestigeShop?.length ?? 0) > 0 && state.prestigeLifetime > 0 ? `
               <button class="btn btn-sm btn-social btn-prestige-shop" data-action="open-prestige-shop" type="button">🏛️ ${ui.prestigeShop}</button>
             ` : ''}
@@ -715,13 +875,20 @@ export function mountGameUI(
   let structureKey = '';
   let renderScheduled = false;
   let prestigeShopOpen = false;
+  let lootWorkshopOpen = false;
   const shopKeyRef = { key: '' };
+  const lootKeyRef = { key: '' };
   const lastPartyScrollTarget = { id: '' };
 
   root.addEventListener('click', (e) => {
     const el = e.target as HTMLElement;
     if (prestigeShopOpen && el.closest('[data-prestige-shop]') === el) {
       prestigeShopOpen = false;
+      scheduleRender();
+      return;
+    }
+    if (lootWorkshopOpen && el.closest('[data-loot-workshop]') === el) {
+      lootWorkshopOpen = false;
       scheduleRender();
       return;
     }
@@ -778,11 +945,14 @@ export function mountGameUI(
           tutorial.reset();
           wasOnQuest = false;
           prestigeShopOpen = false;
+          lootWorkshopOpen = false;
           shopKeyRef.key = '';
+          lootKeyRef.key = '';
         }
         break;
       case 'open-prestige-shop':
         prestigeShopOpen = true;
+        lootWorkshopOpen = false;
         scheduleRender();
         break;
       case 'close-prestige-shop':
@@ -791,6 +961,18 @@ export function mountGameUI(
         break;
       case 'buy-prestige-shop':
         engine.buyPrestigeShop(target.dataset.shopItem!);
+        break;
+      case 'open-loot-workshop':
+        lootWorkshopOpen = true;
+        prestigeShopOpen = false;
+        scheduleRender();
+        break;
+      case 'close-loot-workshop':
+        lootWorkshopOpen = false;
+        scheduleRender();
+        break;
+      case 'craft-zone-loot':
+        engine.craftZoneLoot(target.dataset.lootCraft!);
         break;
     }
   });
@@ -813,6 +995,7 @@ export function mountGameUI(
     applyTutorialHighlight(root, tutorial.current?.target);
     scrollPartyListIfNeeded(root, lastPartyScrollTarget);
     syncPrestigeShop(root, ctx, prestigeShopOpen, shopKeyRef);
+    syncLootWorkshop(root, ctx, lootWorkshopOpen, lootKeyRef);
   };
 
   const scheduleRender = () => {

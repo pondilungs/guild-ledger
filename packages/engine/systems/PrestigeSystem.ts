@@ -45,6 +45,8 @@ export function doPrestige(state: GameState, theme: ThemeConfig): GameState {
     prestigeLifetime: state.prestigeLifetime + points,
     prestigeCount: state.prestigeCount + 1,
     prestigeShop: state.prestigeShop,
+    lootInventory: state.lootInventory,
+    lootCraftsOwned: state.lootCraftsOwned,
     firstPlayTime: state.firstPlayTime,
     totalPlayTime: state.totalPlayTime,
     lastSaveTime: Date.now(),

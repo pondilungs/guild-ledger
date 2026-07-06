@@ -2,6 +2,7 @@ import type { ThemeConfig } from '../config/ThemeSchema.ts';
 import type { GameState } from './types.ts';
 import { calcGoldPerSec } from '../systems/CombatSystem.ts';
 import { getShopOfflineBonus } from '../systems/PrestigeShopSystem.ts';
+import { getLootCraftOfflineBonus } from '../systems/ZoneLootSystem.ts';
 
 export interface OfflineResult {
   gold: number;
@@ -35,5 +36,5 @@ function getOfflineMult(state: GameState, theme: ThemeConfig): number {
       mult += def.effectPerLevel * up.level;
     }
   }
-  return mult + getShopOfflineBonus(state, theme);
+  return mult + getShopOfflineBonus(state, theme) + getLootCraftOfflineBonus(state, theme);
 }

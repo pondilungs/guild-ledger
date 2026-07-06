@@ -1,6 +1,12 @@
 import type { ThemeConfig } from '../config/ThemeSchema.ts';
 import type { GameState } from '../core/types.ts';
 import { getShopDeathReduceBonus, getShopGoldBonus } from './PrestigeShopSystem.ts';
+import {
+  getLootCraftDeathReduceBonus,
+  getLootCraftDpsBonus,
+  getLootCraftGoldBonus,
+  getLootCraftQuestGoldBonus,
+} from './ZoneLootSystem.ts';
 
 export function calcPartyDps(state: GameState, theme: ThemeConfig): number {
   let dps = 0;
@@ -10,14 +16,16 @@ export function calcPartyDps(state: GameState, theme: ThemeConfig): number {
     if (!def) continue;
     dps += def.baseDps * party.level;
   }
-  return dps * getMultiplier(state, theme, 'dps_mult');
+  return dps * (getMultiplier(state, theme, 'dps_mult') + getLootCraftDpsBonus(state, theme));
 }
 
 export function calcGoldPerSec(state: GameState, theme: ThemeConfig): number {
   const zone = theme.zones.find((z) => z.id === state.currentZoneId);
   if (!zone) return 0;
   const dps = calcPartyDps(state, theme);
-  const goldMult = getMultiplier(state, theme, 'gold_mult') + getShopGoldBonus(state, theme);
+  const goldMult = getMultiplier(state, theme, 'gold_mult')
+    + getShopGoldBonus(state, theme)
+    + getLootCraftGoldBonus(state, theme);
   const prestigeMult = 1 + state.prestigeLifetime * theme.prestige.multiplierPerPoint;
   return (dps / zone.baseEnemyHp) * zone.baseGoldPerKill * goldMult * prestigeMult;
 }
@@ -51,12 +59,17 @@ export function rollQuestResult(state: GameState, theme: ThemeConfig): {
 } {
   const zone = theme.zones.find((z) => z.id === state.currentZoneId)!;
   const dps = calcPartyDps(state, theme);
-  const goldMult = getMultiplier(state, theme, 'gold_mult') + getShopGoldBonus(state, theme);
+  const goldMult = getMultiplier(state, theme, 'gold_mult')
+    + getShopGoldBonus(state, theme)
+    + getLootCraftGoldBonus(state, theme);
   const prestigeMult = 1 + state.prestigeLifetime * theme.prestige.multiplierPerPoint;
   const kills = Math.max(1, Math.floor(dps * zone.questDurationSec / zone.baseEnemyHp));
-  const gold = kills * zone.baseGoldPerKill * goldMult * prestigeMult * 1.65;
+  const questMult = 1 + getLootCraftQuestGoldBonus(state, theme);
+  const gold = kills * zone.baseGoldPerKill * goldMult * prestigeMult * 1.65 * questMult;
 
-  const deathReduce = getMultiplier(state, theme, 'death_reduce') + getShopDeathReduceBonus(state, theme);
+  const deathReduce = getMultiplier(state, theme, 'death_reduce')
+    + getShopDeathReduceBonus(state, theme)
+    + getLootCraftDeathReduceBonus(state, theme);
   const effectiveDeath = Math.max(0.02, zone.deathChance / deathReduce);
   const deaths: string[] = [];
   if (state.activeQuest) {

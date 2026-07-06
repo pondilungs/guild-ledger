@@ -20,6 +20,7 @@ import {
 import { canUnlockZone, unlockZone, setCurrentZone } from './systems/ZoneSystem.ts';
 import { canPrestige, doPrestige, calcPrestigePoints } from './systems/PrestigeSystem.ts';
 import { buyShopItem } from './systems/PrestigeShopSystem.ts';
+import { craftLootItem, rollLootForKills } from './systems/ZoneLootSystem.ts';
 import { createLogEntry, pushLog, type LogEntry } from './core/EventLog.ts';
 import type { GameLocale } from './i18n/types.ts';
 
@@ -36,6 +37,8 @@ export interface FlavorText {
   offlineMsg: (gold: number, hours: number) => string;
   prestigeMsg: (points: number) => string;
   shopBuyMsg: (name: string, level: number) => string;
+  lootDropMsg: (lootName: string, amount: number, zoneName: string) => string;
+  lootCraftMsg: (craftName: string) => string;
   clickBoostMsg?: (multiplier: number, durationSec: number) => string;
 }
 
@@ -143,6 +146,12 @@ export class GameEngine {
       const gps = calcGoldPerSec(this.state, this.theme);
       if (gps > 0) {
         this.addGold(gps * dt * this.getClickBoostMult());
+        const zone = this.theme.zones.find((z) => z.id === this.state.currentZoneId);
+        if (zone) {
+          const dps = calcPartyDps(this.state, this.theme);
+          const kills = (dps / zone.baseEnemyHp) * dt;
+          this.applyLootDrops(this.state.currentZoneId, kills);
+        }
       }
     }
     this.state.totalPlayTime += dt;
@@ -263,6 +272,9 @@ export class GameEngine {
     const zone = this.theme.zones.find((z) => z.id === this.state.currentZoneId)!;
     const result = rollQuestResult(this.state, this.theme);
     this.addGold(result.gold);
+    const dps = calcPartyDps(this.state, this.theme);
+    const kills = Math.max(1, (dps * zone.questDurationSec) / zone.baseEnemyHp);
+    this.applyLootDrops(zone.id, kills);
     for (const pid of result.deaths) {
       const party = this.state.parties.find((p) => p.id === pid);
       const def = this.theme.partySlots.find((p) => p.id === pid);
@@ -317,6 +329,36 @@ export class GameEngine {
     trackEvent({ type: 'prestige', points, total: this.state.prestigeLifetime });
     this.persist();
     this.syncProfile();
+    this.notify();
+    return true;
+  }
+
+  private applyLootDrops(zoneId: string, kills: number): void {
+    const { state, dropped } = rollLootForKills(this.state, this.theme, zoneId, kills);
+    if (dropped.length === 0) return;
+    this.state = state;
+    const zone = this.theme.zones.find((z) => z.id === zoneId);
+    const zoneName = zone ? this.zoneName(zoneId, zone.name) : zoneId;
+    for (const drop of dropped) {
+      const def = this.theme.zoneLoot?.find((l) => l.id === drop.lootId);
+      const lootName = this.getLocale().zoneLoot[drop.lootId]?.name ?? def?.name ?? drop.lootId;
+      this.log(
+        this.getLocale().flavor.lootDropMsg(lootName, drop.amount, zoneName),
+        'milestone',
+      );
+    }
+  }
+
+  craftZoneLoot(craftId: string): boolean {
+    const next = craftLootItem(this.state, this.theme, craftId);
+    if (!next) return false;
+    const def = this.theme.zoneLootCrafts?.find((c) => c.id === craftId);
+    if (def) {
+      const name = this.getLocale().zoneLootCrafts[def.id]?.name ?? def.name;
+      this.log(this.getLocale().flavor.lootCraftMsg(name), 'milestone');
+    }
+    this.state = next;
+    this.persist();
     this.notify();
     return true;
   }

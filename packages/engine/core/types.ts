@@ -31,6 +31,10 @@ export interface GameState {
   prestigeLifetime: number;
   prestigeCount: number;
   prestigeShop: PrestigeShopState[];
+  /** Zone-specific loot shards — persists through prestige. */
+  lootInventory: Record<string, number>;
+  /** One-time permanent crafts bought with loot. */
+  lootCraftsOwned: string[];
   currentZoneId: string;
   unlockedZones: string[];
   parties: PartyState[];
@@ -61,6 +65,8 @@ export function createInitialState(
     prestigeLifetime: 0,
     prestigeCount: 0,
     prestigeShop: prestigeShopIds.map((id) => ({ id, level: 0 })),
+    lootInventory: {},
+    lootCraftsOwned: [],
     currentZoneId: startZoneId,
     unlockedZones: [startZoneId],
     parties: partyIds.map((id) => ({

@@ -1038,6 +1038,63 @@ body {
   min-height: 2rem;
 }
 
+.btn-loot-workshop {
+  border-color: #6a8f5a;
+}
+
+.modal-loot-workshop {
+  width: min(540px, 100%);
+}
+
+.loot-shard-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.65rem;
+  margin-bottom: 0.85rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+.loot-shard-label {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.loot-shard-chip strong {
+  color: var(--gold);
+}
+
+.item-zone-label {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.loot-cost-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.loot-craft-card .buy-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 2rem;
+}
+
+.badge.locked {
+  background: var(--surface2);
+  color: var(--muted);
+  border: 1px dashed var(--border);
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
