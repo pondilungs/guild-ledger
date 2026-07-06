@@ -987,6 +987,15 @@ body {
   opacity: 0.75;
 }
 
+.prestige-shop-list .btn-sm {
+  min-height: 2rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.modal-prestige-shop .buy-row {
+  min-height: 2rem;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;

@@ -147,18 +147,79 @@ function buildPrestigeShopHTML(ctx: RenderContext): string {
   `;
 }
 
-function syncPrestigeShop(root: HTMLElement, ctx: RenderContext, open: boolean): void {
+function computeShopStructureKey(ctx: RenderContext): string {
+  return `${ctx.currentLocale}|${(ctx.theme.prestigeShop ?? []).map((s) => s.id).join(',')}`;
+}
+
+function patchPrestigeShop(root: HTMLElement, ctx: RenderContext): void {
+  const { state, theme, ui } = ctx;
+
+  setText(root.querySelector('[data-bind="shop-balance"]'), formatNumber(state.prestigePoints));
+  setText(root.querySelector('[data-bind="shop-lifetime"]'), String(state.prestigeLifetime));
+
+  for (const def of theme.prestigeShop ?? []) {
+    const level = getShopLevel(state, def.id);
+    const maxed = level >= def.maxLevel;
+    const card = root.querySelector(`[data-shop-card="${def.id}"]`);
+    if (!card) continue;
+
+    const levelEl = card.querySelector('.item-level');
+    if (levelEl) {
+      const levelText = `${level}/${def.maxLevel}`;
+      if (levelEl.textContent !== levelText) levelEl.textContent = levelText;
+    }
+
+    if (maxed) {
+      card.classList.add('maxed-card');
+      if (!card.querySelector('.badge.maxed')) {
+        const buyRow = card.querySelector('.buy-row');
+        if (buyRow) {
+          const badge = document.createElement('span');
+          badge.className = 'badge maxed';
+          badge.textContent = 'MAX';
+          buyRow.replaceWith(badge);
+        }
+      }
+      continue;
+    }
+
+    const cost = calcShopCost(def, level);
+    const canBuy = canBuyShopItem(state, theme, def.id);
+    const btn = card.querySelector('[data-action="buy-prestige-shop"]') as HTMLButtonElement | null;
+    if (!btn) continue;
+
+    const ready = canBuy;
+    if (btn.disabled !== !ready) btn.disabled = !ready;
+    btn.classList.toggle('btn-ready', ready);
+    btn.classList.toggle('disabled', !ready);
+
+    const label = `${ui.buyWithPrestige} (${cost} 📜)`;
+    if (btn.textContent !== label) btn.textContent = label;
+  }
+}
+
+function syncPrestigeShop(
+  root: HTMLElement,
+  ctx: RenderContext,
+  open: boolean,
+  shopKeyRef: { key: string },
+): void {
   const existing = root.querySelector('[data-prestige-shop]');
   if (!open) {
     existing?.remove();
+    shopKeyRef.key = '';
     return;
   }
-  const html = buildPrestigeShopHTML(ctx);
-  if (existing) {
-    existing.outerHTML = html;
-  } else {
-    root.insertAdjacentHTML('beforeend', html);
+
+  const structureKey = computeShopStructureKey(ctx);
+  if (!existing || structureKey !== shopKeyRef.key) {
+    existing?.remove();
+    root.insertAdjacentHTML('beforeend', buildPrestigeShopHTML(ctx));
+    shopKeyRef.key = structureKey;
+    return;
   }
+
+  patchPrestigeShop(root, ctx);
 }
 
 function buildHTML(ctx: RenderContext): string {
@@ -468,28 +529,6 @@ function patchDynamic(root: HTMLElement, ctx: RenderContext): void {
   if (lifetimeEl) {
     setText(lifetimeEl, `${ui.prestigeLifetime}: ${state.prestigeLifetime}`);
   }
-  setText(root.querySelector('[data-bind="shop-balance"]'), formatNumber(state.prestigePoints));
-  setText(root.querySelector('[data-bind="shop-lifetime"]'), String(state.prestigeLifetime));
-
-  for (const def of theme.prestigeShop ?? []) {
-    const level = getShopLevel(state, def.id);
-    const maxed = level >= def.maxLevel;
-    const cost = calcShopCost(def, level);
-    const canBuy = canBuyShopItem(state, theme, def.id);
-    const btn = root.querySelector(`[data-action="buy-prestige-shop"][data-shop-item="${def.id}"]`) as HTMLButtonElement | null;
-    if (btn) {
-      btn.disabled = !canBuy;
-      btn.classList.toggle('btn-ready', canBuy);
-      btn.classList.toggle('disabled', !canBuy);
-      if (!maxed) btn.textContent = `${ui.buyWithPrestige} (${cost} 📜)`;
-    }
-    const card = root.querySelector(`[data-shop-card="${def.id}"]`);
-    if (card) {
-      const levelEl = card.querySelector('.item-level');
-      if (levelEl) levelEl.textContent = `${level}/${def.maxLevel}`;
-    }
-  }
-
   const prestigeHint = root.querySelector('[data-bind="prestige-hint"]');
   if (prestigeHint) {
     const base = `${ui.prestige}: ${formatNumber(theme.prestige.minGoldEarned)} ${ui.prestigeNeed}`;
@@ -676,6 +715,7 @@ export function mountGameUI(
   let structureKey = '';
   let renderScheduled = false;
   let prestigeShopOpen = false;
+  const shopKeyRef = { key: '' };
   const lastPartyScrollTarget = { id: '' };
 
   root.addEventListener('click', (e) => {
@@ -738,6 +778,7 @@ export function mountGameUI(
           tutorial.reset();
           wasOnQuest = false;
           prestigeShopOpen = false;
+          shopKeyRef.key = '';
         }
         break;
       case 'open-prestige-shop':
@@ -771,7 +812,7 @@ export function mountGameUI(
     }
     applyTutorialHighlight(root, tutorial.current?.target);
     scrollPartyListIfNeeded(root, lastPartyScrollTarget);
-    syncPrestigeShop(root, ctx, prestigeShopOpen);
+    syncPrestigeShop(root, ctx, prestigeShopOpen, shopKeyRef);
   };
 
   const scheduleRender = () => {
@@ -786,6 +827,7 @@ export function mountGameUI(
   localeManager.subscribe(() => {
     tutorial.updateSteps(getLocale().tutorial);
     structureKey = '';
+    shopKeyRef.key = '';
     scheduleRender();
   });
 
