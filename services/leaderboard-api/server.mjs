@@ -66,6 +66,16 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'DELETE' && url.pathname === '/admin/profiles') {
+      if (!isAdmin(req)) {
+        send(res, 401, { error: 'unauthorized' });
+        return;
+      }
+      const result = await store.wipeAllProfiles();
+      send(res, 200, { wiped: true, ...result });
+      return;
+    }
+
     const usernameDeleteMatch = url.pathname.match(/^\/admin\/profiles\/by-username\/([^/]+)$/);
     if (usernameDeleteMatch && req.method === 'DELETE') {
       if (!isAdmin(req)) {

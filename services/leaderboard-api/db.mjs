@@ -76,6 +76,15 @@ function createFileStore() {
       if (!profile) return false;
       return this.deleteProfile(profile.id);
     },
+    async wipeAllProfiles() {
+      const db = readFileDb();
+      const profileCount = Object.keys(db.profiles).length;
+      const raceCount = Object.keys(db.prestige100Race).length;
+      db.profiles = {};
+      db.prestige100Race = {};
+      writeFileDb(db);
+      return { profileCount, raceCount };
+    },
     async close() {},
   };
 }
@@ -152,6 +161,16 @@ async function createMongoStore(uri) {
       const profile = await col.findOne({ username });
       if (!profile) return false;
       return this.deleteProfile(profile.id);
+    },
+    async wipeAllProfiles() {
+      const [profileResult, raceResult] = await Promise.all([
+        col.deleteMany({}),
+        raceCol.deleteMany({}),
+      ]);
+      return {
+        profileCount: profileResult.deletedCount,
+        raceCount: raceResult.deletedCount,
+      };
     },
     async close() {
       await client.close();
