@@ -47,6 +47,24 @@ export interface PrestigeDef {
   multiplierPerPoint: number;
 }
 
+export type PrestigeShopEffectType =
+  | 'gold_mult_perm'
+  | 'offline_mult_perm'
+  | 'death_reduce_perm'
+  | 'start_gold_perm';
+
+export interface PrestigeShopItemDef {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  baseCost: number;
+  costGrowth: number;
+  maxLevel: number;
+  effectPerLevel: number;
+  effectType: PrestigeShopEffectType;
+}
+
 export interface StarterParty {
   id: string;
   level: number;
@@ -72,5 +90,6 @@ export interface ThemeConfig {
   partySlots: PartySlotDef[];
   upgrades: UpgradeDef[];
   prestige: PrestigeDef;
+  prestigeShop?: PrestigeShopItemDef[];
   offlineCapHours: number;
 }

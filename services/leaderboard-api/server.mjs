@@ -36,7 +36,9 @@ function send(res, status, body) {
 function compareProfiles(a, b) {
   const sa = a.stats ?? {};
   const sb = b.stats ?? {};
-  const prestigeDiff = (sb.prestigePoints ?? 0) - (sa.prestigePoints ?? 0);
+  const prestigeA = sa.prestigeLifetime ?? sa.prestigePoints ?? 0;
+  const prestigeB = sb.prestigeLifetime ?? sb.prestigePoints ?? 0;
+  const prestigeDiff = prestigeB - prestigeA;
   if (prestigeDiff !== 0) return prestigeDiff;
   const countDiff = (sb.prestigeCount ?? 0) - (sa.prestigeCount ?? 0);
   if (countDiff !== 0) return countDiff;

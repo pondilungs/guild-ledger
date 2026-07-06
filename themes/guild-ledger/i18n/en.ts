@@ -181,7 +181,12 @@ export const en: GameLocale = {
     createUsernameHint: 'Pick a username to appear on the leaderboard. Letters, numbers, and underscores only.',
     usernameInvalid: 'Invalid username (3-16 chars, a-z, 0-9, _)',
     profileNotFound: 'Profile not found.',
-    updateBanner: 'v0.3.0 — Infernal Ledger & Celestial Audit are live! Scroll the party list for new tenants and Tax Evasion.',
+    updateBanner: 'v0.4.0 — Reputation Market is live! Spend prestige points; rankings use lifetime reputation.',
+    prestigeShop: 'Reputation Market',
+    prestigeShopDesc: 'Buy permanent bonuses with spendable prestige. Lifetime total stays on the leaderboard.',
+    prestigeBalance: 'Spendable',
+    prestigeLifetime: 'Lifetime rep.',
+    buyWithPrestige: 'Buy',
   },
   zones: {
     rat_cellar: { name: 'Rat Cellar', description: 'Cheap deaths for fresh adventurers.' },
@@ -208,6 +213,12 @@ export const en: GameLocale = {
     guild_reputation: { name: 'Guild Reputation', description: '+5% prestige points' },
     tax_evasion: { name: 'Tax Evasion', description: '+12% gold income (late game)' },
   },
+  prestigeShop: {
+    golden_seal: { name: 'Golden Seal', description: 'Permanent +4% gold income' },
+    night_audit: { name: 'Night Audit', description: 'Permanent +6% offline earnings' },
+    tenant_insurance: { name: 'Tenant Insurance', description: 'Permanent -2% death chance' },
+    opening_balance: { name: 'Opening Balance', description: '+30 starting gold after prestige' },
+  },
   flavor: {
     questCompleteMsg: (gold, deaths, zoneName) => {
       const base = pick(QUEST_COMPLETE);
@@ -221,6 +232,7 @@ export const en: GameLocale = {
     upgradeMsg: (name, level) => pick(UPGRADE)(name, level),
     offlineMsg: (gold, hours) => pick(OFFLINE)(gold, hours),
     prestigeMsg: (points) => pick(PRESTIGE)(points),
+    shopBuyMsg: (name, level) => `${name} → Lv.${level}. Permanent investment logged.`,
     clickBoostMsg: (mult, dur) => pick(CLICK_BOOST)(mult, dur),
   },
   tutorial: [

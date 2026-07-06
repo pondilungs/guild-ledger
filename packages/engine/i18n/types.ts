@@ -67,10 +67,16 @@ export interface GameLocale {
     usernameInvalid: string;
     profileNotFound: string;
     updateBanner: string;
+    prestigeShop: string;
+    prestigeShopDesc: string;
+    prestigeBalance: string;
+    prestigeLifetime: string;
+    buyWithPrestige: string;
   };
   zones: Record<string, LocalizedEntity>;
   parties: Record<string, LocalizedEntity>;
   upgrades: Record<string, LocalizedEntity>;
+  prestigeShop: Record<string, LocalizedEntity>;
   flavor: FlavorText;
   tutorial: TutorialStep[];
   logs: {

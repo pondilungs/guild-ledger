@@ -181,7 +181,12 @@ export const tr: GameLocale = {
     createUsernameHint: 'Sıralamada görünmek için bir kullanıcı adı seç. Harf, rakam ve alt çizgi kullanabilirsin.',
     usernameInvalid: 'Geçersiz kullanıcı adı (3-16 karakter, a-z, 0-9, _)',
     profileNotFound: 'Profil bulunamadı.',
-    updateBanner: 'v0.3.0 — Cehennem Defteri ve Göksel Denetim açıldı! Vergi Kaçırma yatırımı ve yeni kiracılar için partilerde aşağı kaydır.',
+    updateBanner: 'v0.4.0 — İtibar Pazarı açıldı! Prestige puanlarını harca; sıralama toplam itibarını gösterir.',
+    prestigeShop: 'İtibar Pazarı',
+    prestigeShopDesc: 'Prestige puanlarınla kalıcı bonuslar al. Harcadığın puanlar sıralamayı düşürmez.',
+    prestigeBalance: 'Harcayabilir',
+    prestigeLifetime: 'Toplam itibar',
+    buyWithPrestige: 'Satın al',
   },
   zones: {
     rat_cellar: { name: 'Sıçan Bodrumu', description: 'Yeni maceracılar için ucuz ölüm.' },
@@ -208,6 +213,12 @@ export const tr: GameLocale = {
     guild_reputation: { name: 'Lonca İtibarı', description: '+5% prestige puanı' },
     tax_evasion: { name: 'Vergi Kaçırma', description: '+12% altın geliri (geç oyun)' },
   },
+  prestigeShop: {
+    golden_seal: { name: 'Altın Mühür', description: 'Kalıcı +%4 altın geliri' },
+    night_audit: { name: 'Gece Denetimi', description: 'Kalıcı +%6 offline kazanç' },
+    tenant_insurance: { name: 'Kiracı Sigortası', description: 'Kalıcı -%2 ölüm şansı' },
+    opening_balance: { name: 'Açılış Bakiyesi', description: 'Prestige sonrası +30 başlangıç altını' },
+  },
   flavor: {
     questCompleteMsg: (gold, deaths, zoneName) => {
       const base = pick(QUEST_COMPLETE);
@@ -221,6 +232,7 @@ export const tr: GameLocale = {
     upgradeMsg: (name, level) => pick(UPGRADE)(name, level),
     offlineMsg: (gold, hours) => pick(OFFLINE)(gold, hours),
     prestigeMsg: (points) => pick(PRESTIGE)(points),
+    shopBuyMsg: (name, level) => `${name} → Sv.${level}. Kalıcı yatırım deftere işlendi.`,
     clickBoostMsg: (mult, dur) => pick(CLICK_BOOST)(mult, dur),
   },
   tutorial: [

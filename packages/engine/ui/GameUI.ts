@@ -6,6 +6,7 @@ import { renderTutorialOverlay, applyTutorialHighlight } from './TutorialOverlay
 import { calcPartyCost, calcUpgradeCost } from '../systems/CombatSystem.ts';
 import { canUnlockZone } from '../systems/ZoneSystem.ts';
 import { canPrestige, calcPrestigePoints } from '../systems/PrestigeSystem.ts';
+import { calcShopCost, canBuyShopItem, getShopLevel } from '../systems/PrestigeShopSystem.ts';
 import type { LocaleManager, LocaleId } from '../core/LocaleManager.ts';
 import type { GameLocale } from '../i18n/types.ts';
 import type { GameState } from '../core/types.ts';
@@ -75,7 +76,9 @@ function computeStructureKey(ctx: RenderContext): string {
     !!engine.offlineEarnings,
     !!state.activeQuest,
     baseGps > 0,
-    state.prestigePoints > 0,
+    state.prestigeLifetime > 0,
+    state.prestigePoints,
+    state.prestigeShop.map((s) => `${s.id}:${s.level}`).join(','),
     state.currentZoneId,
     state.unlockedZones.join(','),
     state.parties.map((p) => p.level).join(','),
@@ -89,6 +92,73 @@ function computeStructureKey(ctx: RenderContext): string {
     ctx.showUpdateBanner ? 1 : 0,
     theme.upgrades.map((def) => (isUpgradeUnlocked(def, state) ? 1 : 0)).join(''),
   ].join('|');
+}
+
+function buildPrestigeShopHTML(ctx: RenderContext): string {
+  const { state, theme, locale, ui } = ctx;
+  const items = theme.prestigeShop ?? [];
+  if (items.length === 0) return '';
+
+  const cards = items.map((def) => {
+    const loc = locale.prestigeShop[def.id];
+    const level = getShopLevel(state, def.id);
+    const maxed = level >= def.maxLevel;
+    const cost = calcShopCost(def, level);
+    const canBuy = canBuyShopItem(state, theme, def.id);
+    return `
+      <div class="item-card shop-item-card ${maxed ? 'maxed-card' : ''}" data-shop-card="${def.id}">
+        <div class="item-header">
+          <span class="item-icon">${def.icon}</span>
+          <div>
+            <strong>${loc?.name ?? def.name}</strong>
+            <span class="item-level">${level}/${def.maxLevel}</span>
+          </div>
+        </div>
+        <p class="item-desc">${loc?.description ?? def.description}</p>
+        ${maxed
+          ? '<span class="badge maxed">MAX</span>'
+          : `<div class="buy-row">
+              <button class="btn btn-sm ${canBuy ? 'btn-ready' : 'disabled'}"
+                data-action="buy-prestige-shop" data-shop-item="${def.id}"
+                ${canBuy ? '' : 'disabled'}>
+                ${ui.buyWithPrestige} (${cost} 📜)
+              </button>
+            </div>`
+        }
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="modal-backdrop" data-prestige-shop data-modal-backdrop>
+      <div class="modal-card modal-prestige-shop" role="dialog">
+        <div class="modal-header">
+          <h2 class="modal-title">${ui.prestigeShop}</h2>
+          <button class="modal-close" data-action="close-prestige-shop" type="button" aria-label="${ui.close}">×</button>
+        </div>
+        <p class="modal-desc">${ui.prestigeShopDesc}</p>
+        <div class="prestige-shop-balance">
+          <span>${ui.prestigeBalance}: <strong data-bind="shop-balance">${state.prestigePoints}</strong> 📜</span>
+          <span>${ui.prestigeLifetime}: <strong data-bind="shop-lifetime">${state.prestigeLifetime}</strong></span>
+        </div>
+        <div class="prestige-shop-list">${cards}</div>
+      </div>
+    </div>
+  `;
+}
+
+function syncPrestigeShop(root: HTMLElement, ctx: RenderContext, open: boolean): void {
+  const existing = root.querySelector('[data-prestige-shop]');
+  if (!open) {
+    existing?.remove();
+    return;
+  }
+  const html = buildPrestigeShopHTML(ctx);
+  if (existing) {
+    existing.outerHTML = html;
+  } else {
+    root.insertAdjacentHTML('beforeend', html);
+  }
 }
 
 function buildHTML(ctx: RenderContext): string {
@@ -133,11 +203,14 @@ function buildHTML(ctx: RenderContext): string {
               </span>
             </button>
           ` : ''}
-          ${state.prestigePoints > 0 ? `
+          ${state.prestigeLifetime > 0 ? `
             <div class="resource prestige">
               <span>${theme.prestige.currencyIcon}</span>
-              <span class="resource-value">${state.prestigePoints}</span>
-              <span class="resource-label">${locale.prestigeCurrency}</span>
+              <div class="prestige-resource-meta">
+                <span class="resource-value" data-bind="prestige-balance">${state.prestigePoints}</span>
+                <span class="resource-label">${ui.prestigeBalance}</span>
+                <span class="prestige-lifetime-hint" data-bind="prestige-lifetime">${ui.prestigeLifetime}: ${state.prestigeLifetime}</span>
+              </div>
             </div>
           ` : ''}
         </div>
@@ -147,6 +220,9 @@ function buildHTML(ctx: RenderContext): string {
             <button class="lang-btn ${currentLocale === 'en' ? 'active' : ''}" data-action="set-locale" data-locale="en" type="button">EN</button>
           </div>
           <div class="social-bar">
+            ${(theme.prestigeShop?.length ?? 0) > 0 && state.prestigeLifetime > 0 ? `
+              <button class="btn btn-sm btn-social btn-prestige-shop" data-action="open-prestige-shop" type="button">🏛️ ${ui.prestigeShop}</button>
+            ` : ''}
             <button class="btn btn-sm btn-social" data-action="open-leaderboard" type="button">🏆 ${ui.leaderboard}</button>
             <button class="btn btn-sm btn-social profile-chip" data-action="open-profile" type="button" data-bind="username">👤 ${ctx.displayUsername}</button>
           </div>
@@ -387,6 +463,33 @@ function patchDynamic(root: HTMLElement, ctx: RenderContext): void {
 
   setText(root.querySelector('[data-bind="total-gold"]'), formatNumber(state.totalGoldEarned));
 
+  setText(root.querySelector('[data-bind="prestige-balance"]'), formatNumber(state.prestigePoints));
+  const lifetimeEl = root.querySelector('[data-bind="prestige-lifetime"]');
+  if (lifetimeEl) {
+    setText(lifetimeEl, `${ui.prestigeLifetime}: ${state.prestigeLifetime}`);
+  }
+  setText(root.querySelector('[data-bind="shop-balance"]'), formatNumber(state.prestigePoints));
+  setText(root.querySelector('[data-bind="shop-lifetime"]'), String(state.prestigeLifetime));
+
+  for (const def of theme.prestigeShop ?? []) {
+    const level = getShopLevel(state, def.id);
+    const maxed = level >= def.maxLevel;
+    const cost = calcShopCost(def, level);
+    const canBuy = canBuyShopItem(state, theme, def.id);
+    const btn = root.querySelector(`[data-action="buy-prestige-shop"][data-shop-item="${def.id}"]`) as HTMLButtonElement | null;
+    if (btn) {
+      btn.disabled = !canBuy;
+      btn.classList.toggle('btn-ready', canBuy);
+      btn.classList.toggle('disabled', !canBuy);
+      if (!maxed) btn.textContent = `${ui.buyWithPrestige} (${cost} 📜)`;
+    }
+    const card = root.querySelector(`[data-shop-card="${def.id}"]`);
+    if (card) {
+      const levelEl = card.querySelector('.item-level');
+      if (levelEl) levelEl.textContent = `${level}/${def.maxLevel}`;
+    }
+  }
+
   const prestigeHint = root.querySelector('[data-bind="prestige-hint"]');
   if (prestigeHint) {
     const base = `${ui.prestige}: ${formatNumber(theme.prestige.minGoldEarned)} ${ui.prestigeNeed}`;
@@ -572,10 +675,18 @@ export function mountGameUI(
   let wasOnQuest = false;
   let structureKey = '';
   let renderScheduled = false;
+  let prestigeShopOpen = false;
   const lastPartyScrollTarget = { id: '' };
 
   root.addEventListener('click', (e) => {
-    const target = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+    const el = e.target as HTMLElement;
+    if (prestigeShopOpen && el.closest('[data-prestige-shop]') === el) {
+      prestigeShopOpen = false;
+      scheduleRender();
+      return;
+    }
+
+    const target = el.closest('[data-action]') as HTMLElement | null;
     if (!target) return;
     const action = target.dataset.action;
     const ui = getLocale().ui;
@@ -626,7 +737,19 @@ export function mountGameUI(
           engine.reset();
           tutorial.reset();
           wasOnQuest = false;
+          prestigeShopOpen = false;
         }
+        break;
+      case 'open-prestige-shop':
+        prestigeShopOpen = true;
+        scheduleRender();
+        break;
+      case 'close-prestige-shop':
+        prestigeShopOpen = false;
+        scheduleRender();
+        break;
+      case 'buy-prestige-shop':
+        engine.buyPrestigeShop(target.dataset.shopItem!);
         break;
     }
   });
@@ -648,6 +771,7 @@ export function mountGameUI(
     }
     applyTutorialHighlight(root, tutorial.current?.target);
     scrollPartyListIfNeeded(root, lastPartyScrollTarget);
+    syncPrestigeShop(root, ctx, prestigeShopOpen);
   };
 
   const scheduleRender = () => {

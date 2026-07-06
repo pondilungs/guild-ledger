@@ -26,7 +26,18 @@ export function migrateState(state: GameState, theme: ThemeConfig): GameState {
     }
   }
 
-  return { ...state, parties, upgrades };
+  const prestigeLifetime = state.prestigeLifetime ?? state.prestigePoints ?? 0;
+  const prestigePoints = state.prestigePoints ?? prestigeLifetime;
+
+  const knownShop = new Set((state.prestigeShop ?? []).map((s) => s.id));
+  const prestigeShop = [...(state.prestigeShop ?? [])];
+  for (const def of theme.prestigeShop ?? []) {
+    if (!knownShop.has(def.id)) {
+      prestigeShop.push({ id: def.id, level: 0 });
+    }
+  }
+
+  return { ...state, parties, upgrades, prestigeLifetime, prestigePoints, prestigeShop };
 }
 
 export function loadGame(theme: ThemeConfig): GameState | null {
@@ -51,6 +62,7 @@ export function resetGame(theme: ThemeConfig): GameState {
     theme.zones[0].id,
     theme.startingGold,
     theme.startingParties,
+    theme.prestigeShop?.map((s) => s.id) ?? [],
   );
 }
 

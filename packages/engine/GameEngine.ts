@@ -19,6 +19,7 @@ import {
 } from './systems/ClickBoostSystem.ts';
 import { canUnlockZone, unlockZone, setCurrentZone } from './systems/ZoneSystem.ts';
 import { canPrestige, doPrestige, calcPrestigePoints } from './systems/PrestigeSystem.ts';
+import { buyShopItem } from './systems/PrestigeShopSystem.ts';
 import { createLogEntry, pushLog, type LogEntry } from './core/EventLog.ts';
 import type { GameLocale } from './i18n/types.ts';
 
@@ -34,6 +35,7 @@ export interface FlavorText {
   upgradeMsg: (name: string, level: number) => string;
   offlineMsg: (gold: number, hours: number) => string;
   prestigeMsg: (points: number) => string;
+  shopBuyMsg: (name: string, level: number) => string;
   clickBoostMsg?: (multiplier: number, durationSec: number) => string;
 }
 
@@ -61,6 +63,7 @@ export class GameEngine {
       theme.zones[0].id,
       theme.startingGold,
       theme.startingParties,
+      theme.prestigeShop?.map((s) => s.id) ?? [],
     );
     this.loop = new GameLoop((dt) => this.tick(dt));
     this.initSession();
@@ -301,7 +304,22 @@ export class GameEngine {
     const points = calcPrestigePoints(this.state, this.theme);
     this.state = doPrestige(this.state, this.theme);
     this.log(this.getLocale().flavor.prestigeMsg(points), 'milestone');
-    trackEvent({ type: 'prestige', points, total: this.state.prestigePoints });
+    trackEvent({ type: 'prestige', points, total: this.state.prestigeLifetime });
+    this.persist();
+    this.notify();
+    return true;
+  }
+
+  buyPrestigeShop(itemId: string): boolean {
+    const next = buyShopItem(this.state, this.theme, itemId);
+    if (!next) return false;
+    const def = this.theme.prestigeShop?.find((s) => s.id === itemId);
+    const entry = next.prestigeShop.find((s) => s.id === itemId);
+    if (def && entry) {
+      const name = this.getLocale().prestigeShop[def.id]?.name ?? def.name;
+      this.log(this.getLocale().flavor.shopBuyMsg(name, entry.level), 'milestone');
+    }
+    this.state = next;
     this.persist();
     this.notify();
     return true;

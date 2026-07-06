@@ -44,7 +44,7 @@ export function buildStats(state: GameState, theme: ThemeConfig): PlayerStats {
   return {
     totalGoldEarned: state.totalGoldEarned,
     gold: state.gold,
-    prestigePoints: state.prestigePoints,
+    prestigePoints: state.prestigeLifetime,
     prestigeCount: state.prestigeCount,
     totalPlayTime: state.totalPlayTime,
     zonesUnlocked: state.unlockedZones.length,

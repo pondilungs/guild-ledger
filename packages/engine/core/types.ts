@@ -9,6 +9,11 @@ export interface UpgradeState {
   level: number;
 }
 
+export interface PrestigeShopState {
+  id: string;
+  level: number;
+}
+
 export interface QuestState {
   zoneId: string;
   partyIds: string[];
@@ -20,8 +25,12 @@ export interface QuestState {
 export interface GameState {
   gold: number;
   totalGoldEarned: number;
+  /** Spendable prestige currency (header balance). */
   prestigePoints: number;
+  /** Lifetime prestige earned — leaderboard & income multiplier. */
+  prestigeLifetime: number;
   prestigeCount: number;
+  prestigeShop: PrestigeShopState[];
   currentZoneId: string;
   unlockedZones: string[];
   parties: PartyState[];
@@ -41,6 +50,7 @@ export function createInitialState(
   startZoneId: string,
   startingGold = 0,
   startingParties: { id: string; level: number }[] = [],
+  prestigeShopIds: string[] = [],
 ): GameState {
   const now = Date.now();
   const starterMap = new Map(startingParties.map((p) => [p.id, p.level]));
@@ -48,7 +58,9 @@ export function createInitialState(
     gold: startingGold,
     totalGoldEarned: 0,
     prestigePoints: 0,
+    prestigeLifetime: 0,
     prestigeCount: 0,
+    prestigeShop: prestigeShopIds.map((id) => ({ id, level: 0 })),
     currentZoneId: startZoneId,
     unlockedZones: [startZoneId],
     parties: partyIds.map((id) => ({

@@ -1,6 +1,7 @@
 import type { ThemeConfig } from '../config/ThemeSchema.ts';
 import type { GameState } from '../core/types.ts';
 import { createInitialState } from '../core/types.ts';
+import { getShopStartingGoldBonus } from './PrestigeShopSystem.ts';
 
 export function calcPrestigePoints(state: GameState, theme: ThemeConfig): number {
   if (state.totalGoldEarned < theme.prestige.minGoldEarned) return 0;
@@ -28,18 +29,22 @@ export function doPrestige(state: GameState, theme: ThemeConfig): GameState {
   const points = calcPrestigePoints(state, theme);
   if (points <= 0) return state;
 
+  const startBonus = getShopStartingGoldBonus(state, theme);
   const fresh = createInitialState(
     theme.partySlots.map((p) => p.id),
     theme.upgrades.map((u) => u.id),
     theme.zones[0].id,
-    theme.startingGold,
+    theme.startingGold + startBonus,
     theme.startingParties,
+    theme.prestigeShop?.map((s) => s.id) ?? [],
   );
 
   return {
     ...fresh,
     prestigePoints: state.prestigePoints + points,
+    prestigeLifetime: state.prestigeLifetime + points,
     prestigeCount: state.prestigeCount + 1,
+    prestigeShop: state.prestigeShop,
     firstPlayTime: state.firstPlayTime,
     totalPlayTime: state.totalPlayTime,
     lastSaveTime: Date.now(),
