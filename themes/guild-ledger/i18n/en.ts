@@ -131,6 +131,7 @@ export const en: GameLocale = {
     upgrade: 'Upgrade',
     sendQuest: 'Send (Expedition)',
     questInProgress: 'Quest in progress...',
+    questZoneLocked: 'Zone locked until the expedition returns',
     activeZone: 'Active Zone',
     ledger: 'Ledger Log',
     ledgerEmpty: 'No entries yet.',
@@ -316,12 +317,12 @@ export const en: GameLocale = {
     reset: 'Ledger reset. New fiscal year.',
   },
   patchNotes: {
-    headline: 'Removed the First to 20 Rep race — one leaderboard now.',
+    headline: 'Fixed zone-switch exploit during expeditions.',
     items: [
-      'Removed the 20 Rep tab from rankings — overall leaderboard only',
+      'Zones lock when a quest starts — rewards always use the zone you sent from',
+      'Removed the 20 Rep race tab — overall leaderboard only',
       'Zone loot workshop is scrollable and mobile-friendly',
-      'One-time patch notes modal when a new version ships',
-      'Minor polish and performance tweaks',
+      'Minor fixes and polish',
     ],
   },
 };

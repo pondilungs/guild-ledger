@@ -21,6 +21,7 @@ export interface GameLocale {
     upgrade: string;
     sendQuest: string;
     questInProgress: string;
+    questZoneLocked: string;
     activeZone: string;
     ledger: string;
     ledgerEmpty: string;

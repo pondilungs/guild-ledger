@@ -269,12 +269,14 @@ export class GameEngine {
   }
 
   private completeQuest(): void {
-    const zone = this.theme.zones.find((z) => z.id === this.state.currentZoneId)!;
+    const quest = this.state.activeQuest;
+    if (!quest) return;
+    const zone = this.theme.zones.find((z) => z.id === quest.zoneId)!;
     const result = rollQuestResult(this.state, this.theme);
     this.addGold(result.gold);
     const dps = calcPartyDps(this.state, this.theme);
-    const kills = Math.max(1, (dps * zone.questDurationSec) / zone.baseEnemyHp);
-    this.applyLootDrops(zone.id, kills);
+    const kills = Math.max(1, (dps * quest.durationSec) / zone.baseEnemyHp);
+    this.applyLootDrops(quest.zoneId, kills);
     for (const pid of result.deaths) {
       const party = this.state.parties.find((p) => p.id === pid);
       const def = this.theme.partySlots.find((p) => p.id === pid);
@@ -293,7 +295,7 @@ export class GameEngine {
     );
     trackEvent({
       type: 'quest_complete',
-      zoneId: this.state.currentZoneId,
+      zoneId: quest.zoneId,
       gold: result.gold,
       deaths: result.deaths.length,
     });
@@ -314,6 +316,7 @@ export class GameEngine {
   }
 
   selectZone(zoneId: string): boolean {
+    if (this.state.activeQuest) return false;
     if (!this.state.unlockedZones.includes(zoneId)) return false;
     this.state = setCurrentZone(this.state, zoneId);
     this.persist();

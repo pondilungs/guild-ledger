@@ -131,6 +131,7 @@ export const tr: GameLocale = {
     upgrade: 'Yükselt',
     sendQuest: 'Gönder (Expedition)',
     questInProgress: 'Görev devam ediyor...',
+    questZoneLocked: 'Görev bitene kadar bölge değişmez',
     activeZone: 'Aktif Bölge',
     ledger: 'Muhasebe Defteri',
     ledgerEmpty: 'Henüz kayıt yok.',
@@ -316,12 +317,12 @@ export const tr: GameLocale = {
     reset: 'Defter sıfırlandı. Yeni mali yıl başladı.',
   },
   patchNotes: {
-    headline: '20 İtibar yarışı kaldırıldı, sıralama sadeleştirildi.',
+    headline: 'Görev sırasında bölge değiştirme açığı kapatıldı.',
     items: [
-      'Sıralama ekranından 20 İtibar tablosu kaldırıldı — tek genel sıralama kaldı',
+      'Görev başladıktan sonra bölge değiştirilemez — ödül gönderilen bölgeye göre hesaplanır',
+      '20 İtibar yarışı tablosu kaldırıldı, tek genel sıralama kaldı',
       'Bölge ganimet atölyesi kaydırılabilir ve mobil uyumlu',
-      'Yeni sürüm geldiğinde tek seferlik yenilik notları modalı',
-      'Küçük düzenlemeler ve performans iyileştirmeleri',
+      'Küçük düzenlemeler ve hata düzeltmeleri',
     ],
   },
 };

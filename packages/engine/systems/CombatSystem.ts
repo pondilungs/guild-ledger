@@ -57,13 +57,15 @@ export function rollQuestResult(state: GameState, theme: ThemeConfig): {
   gold: number;
   deaths: string[];
 } {
-  const zone = theme.zones.find((z) => z.id === state.currentZoneId)!;
+  const questZoneId = state.activeQuest?.zoneId ?? state.currentZoneId;
+  const zone = theme.zones.find((z) => z.id === questZoneId)!;
+  const questDurationSec = state.activeQuest?.durationSec ?? zone.questDurationSec;
   const dps = calcPartyDps(state, theme);
   const goldMult = getMultiplier(state, theme, 'gold_mult')
     + getShopGoldBonus(state, theme)
     + getLootCraftGoldBonus(state, theme);
   const prestigeMult = 1 + state.prestigeLifetime * theme.prestige.multiplierPerPoint;
-  const kills = Math.max(1, Math.floor(dps * zone.questDurationSec / zone.baseEnemyHp));
+  const kills = Math.max(1, Math.floor(dps * questDurationSec / zone.baseEnemyHp));
   const questMult = 1 + getLootCraftQuestGoldBonus(state, theme);
   const gold = kills * zone.baseGoldPerKill * goldMult * prestigeMult * 1.65 * questMult;
 

@@ -474,7 +474,8 @@ function buildHTML(ctx: RenderContext): string {
   const { engine, state, theme, locale, ui, baseGps, gps, clickStatus, onQuest, nextBuyId, currentLocale, tutorial } = ctx;
   const prestigePts = calcPrestigePoints(state, theme);
   const quest = state.activeQuest;
-  const zone = theme.zones.find((z) => z.id === state.currentZoneId)!;
+  const displayZoneId = quest?.zoneId ?? state.currentZoneId;
+  const zone = theme.zones.find((z) => z.id === displayZoneId)!;
   const zoneLoc = locale.zones[zone.id];
   const clickConfig = theme.clickBoost ?? { multiplier: 2, durationSec: 30, cooldownSec: 30, tapGoldFactor: 0.08 };
   const prestigeReady = canPrestige(state, theme);
@@ -566,6 +567,7 @@ function buildHTML(ctx: RenderContext): string {
                 <div class="progress-fill" data-bind="quest-fill" style="width: ${(quest.progress / quest.durationSec) * 100}%"></div>
               </div>
               <p data-bind="quest-time">${ui.questInProgress} ${formatTime(quest.durationSec - quest.progress)}</p>
+              <p class="quest-zone-lock">${ui.questZoneLocked}</p>
             </div>
           ` : `
             <button class="btn btn-accent btn-block" data-tutorial-target="start-quest" data-action="start-quest" ${state.parties.every(p => p.level === 0) ? 'disabled' : ''}>
@@ -576,13 +578,14 @@ function buildHTML(ctx: RenderContext): string {
             ${theme.zones.map((z) => {
               const zLoc = locale.zones[z.id];
               const unlocked = state.unlockedZones.includes(z.id);
-              const active = state.currentZoneId === z.id;
+              const active = displayZoneId === z.id;
+              const onQuestHere = quest?.zoneId === z.id;
               const zoneCanUnlock = canUnlockZone(state, z.id, theme);
               return `
-                <div class="zone-item ${active ? 'active' : ''} ${unlocked ? '' : 'locked'}" data-zone-item="${z.id}">
+                <div class="zone-item ${active ? 'active' : ''} ${onQuestHere ? 'on-quest' : ''} ${unlocked ? '' : 'locked'}" data-zone-item="${z.id}">
                   <span>${z.icon}</span>
                   <span>${zLoc?.name ?? z.name}</span>
-                  ${active ? `<span class="badge">${ui.active}</span>` : ''}
+                  ${onQuestHere ? `<span class="badge quest-badge">⚔️</span>` : active ? `<span class="badge">${ui.active}</span>` : ''}
                   <span class="zone-actions" data-zone-actions="${z.id}">
                     ${!unlocked
                       ? `<button class="btn btn-sm ${zoneCanUnlock ? 'btn-ready' : 'disabled'}"
@@ -591,7 +594,7 @@ function buildHTML(ctx: RenderContext): string {
                           ${ui.unlock} (${formatNumber(z.unlockGold)})
                         </button>
                         ${affordHintHtml(state.gold, z.unlockGold, baseGps, ui, onQuest, `zone:${z.id}`)}`
-                      : !active
+                      : !active && !quest
                         ? `<button class="btn btn-sm" data-action="select-zone" data-zone="${z.id}">${ui.select}</button>`
                         : ''
                     }

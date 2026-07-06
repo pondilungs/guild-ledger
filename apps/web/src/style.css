@@ -579,6 +579,13 @@ body {
   flex-shrink: 0;
 }
 
+.quest-zone-lock {
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
 .zone-panel > .btn-block {
   flex-shrink: 0;
 }
@@ -626,6 +633,16 @@ body {
 .zone-item.active {
   background: rgba(127, 90, 240, 0.15);
   border: 1px solid var(--accent);
+}
+
+.zone-item.on-quest {
+  box-shadow: 0 0 0 1px rgba(245, 197, 66, 0.35);
+}
+
+.zone-item .badge.quest-badge {
+  background: rgba(245, 197, 66, 0.18);
+  border-color: var(--gold);
+  color: var(--gold);
 }
 
 .zone-item.locked {
