@@ -1,4 +1,4 @@
-=== GUILD LEDGER v0.5.3 — itch.io SAYFA METİNLERİ ===
+=== GUILD LEDGER v0.5.6 — itch.io SAYFA METİNLERİ ===
 
 DOSYALAR (release/ klasöründe):
   • guild-ledger-itch.zip  ← HTML upload (güncel build)
@@ -21,16 +21,16 @@ idle, incremental, rpg, management, fantasy, clicker, singleplayer, web, tycoon,
 PRICE: $0 (Name your own price, min $0)
 
 === SHORT DESCRIPTION (EN) ===
-You are the guild accountant — not the hero. Farm zones, collect rare loot, craft permanent gear, prestige, and race on the online leaderboard.
+You are the guild accountant — not the hero. Farm zones, craft permanent loot, prestige, and race on a fresh online leaderboard.
 
 === SHORT DESCRIPTION (TR) ===
-Lonca muhasebecisisin — kahraman değil. Bölgelerde farm yap, nadir ganimet topla, kalıcı ekipman üret, prestige yap ve online sıralamada yarış.
+Lonca muhasebecisisin — kahraman değil. Bölgelerde farm yap, kalıcı ganimet üret, prestige yap; yeni sezon sıralamasında yarış.
 
 === FULL DESCRIPTION (EN) — itch Edit → Description ===
 NOT: [b] etiketleri düz metin görünüyorsa PLAIN sürümünü kullan.
 
 --- PLAIN (önerilen) ---
-GUILD LEDGER — v0.5.3
+GUILD LEDGER — v0.5.6
 
 You are NOT the hero. You are the guild accountant.
 
@@ -45,7 +45,7 @@ HOW TO PLAY
 • Tap Collect — 2× income boost (30s on / 30s cooldown)
 • Reputation Market — spend prestige on permanent upgrades (leaderboard uses lifetime rep.)
 
-ZONE LOOT — endgame grind (NEW in v0.5)
+ZONE LOOT — endgame grind
 Rare materials drop while you farm each zone. Stockpile them over hours or days, then craft permanent gear that survives prestige:
 
 • Rusty Wire → Rat Trap (+5% gold)
@@ -57,19 +57,21 @@ Rare materials drop while you farm each zone. Stockpile them over hours or days,
 
 Gear does NOT increase drop rates — it's pure long-term income.
 
-ONLINE
-• Global leaderboard (lifetime reputation)
+ONLINE — fresh season (v0.5.6)
+• Global leaderboard reset — new season, race again from zero
 • First to 20 Rep race
 • Username + auto profile sync
 
 FEATURES
 • Browser idle/incremental RPG — no download
 • Turkish & English UI
+• Zone loot workshop with scrollable mobile UI
+• One-time patch notes when updates ship
 • Fullscreen dashboard + flavor event log
 • Offline earnings (8h cap), auto-save, tutorial
 • Mobile-friendly
 
-v0.5.3 — Zone loot workshop, semantic craft pairs, harder shard grind, zone income scaling fixes.
+v0.5.6 — Loot workshop UI refresh, patch notes modal, scrollable workshop, fresh leaderboard season.
 
 Feedback welcome — we're actively updating!
 
@@ -78,57 +80,49 @@ Controls: Mouse / touch
 Play: https://pondilungs.itch.io/guild-ledger
 
 --- BBCode ---
-[b]Guild Ledger[/b] — v0.5.3
+[b]Guild Ledger[/b] — v0.5.6
 
 You are NOT the hero. You are the guild accountant.
 
-Rent adventurers, send expeditions, collect profit when they die, and grow your guild empire. Every death is a line item. Every quest is a receipt.
+Rent adventurers, send expeditions, collect profit when they die, and grow your guild empire.
 
 [b]How to play[/b]
 • Hire party members — passive gold every second
 • Send expeditions — burst profit, death risk
-• Upgrade the guild — multiply income
-• Unlock 6 zones — each tier pays more than the last
-• Prestige — reset for permanent reputation bonuses
+• Upgrade the guild • Unlock 6 zones • Prestige
 • Tap [b]Collect[/b] — 2× income boost
 • [b]Reputation Market[/b] — permanent prestige upgrades
 
-[b]Zone Loot[/b] (v0.5)
-Rare materials drop while farming each zone. Craft permanent gear that survives prestige — Rusty Wire → Rat Trap, Iron Shard → Goblin Pickaxe, and more. Long-term endgame income.
+[b]Zone Loot[/b]
+Rare materials drop while farming. Craft permanent gear that survives prestige.
 
-[b]Online[/b]
-• Global leaderboard • First to 20 Rep race • Profile sync
+[b]Online — fresh season[/b]
+• Leaderboard reset • First to 20 Rep race • Profile sync
 
 [b]Features[/b]
-Browser idle RPG • TR/EN • Offline earnings • Mobile-friendly
+Browser idle RPG • TR/EN • Patch notes on update • Mobile-friendly
 
 Feedback welcome! Mouse / touch
 
 === FULL DESCRIPTION (TR) — isteğe bağlı ===
-GUILD LEDGER — v0.5.3
+GUILD LEDGER — v0.5.6
 
 Sen kahraman değilsin — lonca muhasebecisisin.
 
-Maceracı kirala, gönder, ölünce kâr yaz. Her ölüm gider, her görev makbuz.
+Maceracı kirala, gönder, ölünce kâr yaz.
 
 NASIL OYNANIR
 • Parti kirala — pasif altın
 • Gönder — ani kâr, ölüm riski
-• Lonca yatırımları
-• 6 bölge — üst bölge daha çok öder
-• Prestige + İtibar Pazarı
+• Lonca yatırımları • 6 bölge • Prestige + İtibar Pazarı
 
-BÖLGE GANİMETLERİ (v0.5)
-Bölgelerde çok nadir parça düşer. Biriktir, kalıcı ekipman üret (prestige sonrası kalır):
-• Paslı Tel → Sıçan Tuzağı
-• Demir Parçası → Goblin Kazması
-• Mahzen Mumu → Mahzen Feneri
-• Ejderha Dişi → Kasa Anahtarı
-• Cehennem Mürekkebi → Cehennem Mühürü
-• Denetim Balmumu → Denetim Mührü
+BÖLGE GANİMETLERİ
+Bölgelerde nadir parça düşer. Biriktir, kalıcı ekipman üret (prestige sonrası kalır).
 
-ONLINE: Sıralama, 20 İtibar yarışı, profil sync
-TR/EN, offline kazanç, mobil uyumlu
+ONLINE — yeni sezon (v0.5.6)
+Sıralama sıfırlandı, 20 İtibar yarışı yeniden başladı, profil sync.
+
+TR/EN, güncelleme notları, offline kazanç, mobil uyumlu
 
 === EMBED SETTINGS ===
 ☑ Embed in page
@@ -138,9 +132,9 @@ Scrollbars: OFF
 
 === SCREENSHOT ÖNERİLERİ ===
 1. Ana dashboard
-2. Bölge Ganimetleri — parça → ekipman kartı
-3. Sıralama (Genel + 20 İtibar)
-4. İtibar Pazarı
+2. Bölge Ganimetleri — kaydırılabilir atölye
+3. Yenilikler (patch notes) modalı
+4. Sıralama (Genel + 20 İtibar)
 
 === GÜNCELLEME AKIŞI ===
   VITE_LEADERBOARD_URL=https://guild-ledger-leaderboard.onrender.com npm run build:itch

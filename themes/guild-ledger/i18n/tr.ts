@@ -321,11 +321,11 @@ export const tr: GameLocale = {
     reset: 'Defter sıfırlandı. Yeni mali yıl başladı.',
   },
   patchNotes: {
-    headline: 'Bölge ganimet atölyesi yenilendi ve güncelleme notları eklendi.',
+    headline: 'Bölge ganimet atölyesi yenilendi, sıralama tablosu sıfırlandı.',
     items: [
-      'Bölge ganimet atölyesi arayüzü baştan tasarlandı — malzeme, ilerleme ve ürün tek kartta',
-      'Mobilde daha okunaklı dikey düzen',
+      'Bölge ganimet atölyesi arayüzü baştan tasarlandı — kaydırılabilir liste, mobil uyumlu',
       'Yeni sürüm geldiğinde tek seferlik yenilik notları modalı',
+      'Online sıralama ve 20 İtibar yarışı yeni sezona başladı — herkes sıfırdan',
       'Küçük düzenlemeler ve performans iyileştirmeleri',
     ],
   },

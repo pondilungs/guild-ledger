@@ -321,11 +321,11 @@ export const en: GameLocale = {
     reset: 'Ledger reset. New fiscal year.',
   },
   patchNotes: {
-    headline: 'Zone loot workshop refresh plus one-time patch notes on update.',
+    headline: 'Zone loot workshop refresh and a fresh leaderboard season.',
     items: [
-      'Zone loot workshop UI rebuilt — material, progress, and craft on one card',
-      'Cleaner vertical layout on mobile',
+      'Zone loot workshop UI rebuilt — scrollable list, mobile-friendly layout',
       'One-time patch notes modal when a new version ships',
+      'Online leaderboard and First to 20 Rep race reset — everyone starts fresh',
       'Minor polish and performance tweaks',
     ],
   },
