@@ -18,7 +18,7 @@ import type { GameLocale } from '../i18n/types.ts';
 import type { GameState } from '../core/types.ts';
 import type { ThemeConfig } from '../config/ThemeSchema.ts';
 import type { ClickBoostStatus } from '../systems/ClickBoostSystem.ts';
-import { shouldShowUpdateBanner, dismissUpdateBanner } from '../core/UpdateBanner.ts';
+import { shouldShowPatchNotes, dismissPatchNotes } from '../core/PatchNotes.ts';
 
 export interface GameUIOptions {
   localeManager: LocaleManager;
@@ -40,7 +40,7 @@ interface RenderContext {
   currentLocale: LocaleId;
   tutorial: TutorialManager;
   displayUsername: string;
-  showUpdateBanner: boolean;
+  showPatchNotes: boolean;
 }
 
 function isUpgradeUnlocked(
@@ -95,7 +95,7 @@ function computeStructureKey(ctx: RenderContext): string {
     state.parties.some((p) => p.level > 0) ? 1 : 0,
     theme.partySlots.map((def) => (state.unlockedZones.includes(def.unlockZone) ? 1 : 0)).join(''),
     theme.zones.map((z) => (state.unlockedZones.includes(z.id) ? 1 : 0)).join(''),
-    ctx.showUpdateBanner ? 1 : 0,
+    ctx.showPatchNotes ? 1 : 0,
     theme.upgrades.map((def) => (isUpgradeUnlocked(def, state) ? 1 : 0)).join(''),
   ].join('|');
 }
@@ -218,69 +218,129 @@ function buildLootPairCard(
   const { state, theme, locale, ui } = ctx;
   const lootLoc = locale.zoneLoot[loot.id];
   const craftLoc = locale.zoneLootCrafts[craft.id];
+  const zoneDef = theme.zones.find((z) => z.id === loot.zoneId);
   const zoneLoc = locale.zones[loot.zoneId];
   const owned = isLootCraftOwned(state, craft.id);
   const zoneUnlocked = state.unlockedZones.includes(loot.zoneId);
   const count = getLootCount(state, loot.id);
   const canCraft = canCraftLootItem(state, theme, craft.id);
   const progress = Math.min(100, Math.round((count / craft.shardCost) * 100));
+  const zoneLabel = `${zoneDef?.icon ?? '📍'} ${zoneLoc?.name ?? loot.zoneId}`;
+  const lootName = lootLoc?.name ?? loot.name;
+  const craftName = craftLoc?.name ?? craft.name;
+  const craftHint = craftLoc?.description ?? craft.description;
 
-  const craftPanel = owned
-    ? `<div class="loot-craft-panel owned">
-        <span class="loot-panel-tag">${ui.lootCraftsInto}</span>
-        <div class="loot-panel-head">
-          <span class="item-icon">${craft.icon}</span>
-          <strong>${craftLoc?.name ?? craft.name}</strong>
+  if (!zoneUnlocked) {
+    return `
+      <div class="loot-entry is-locked" data-loot-pair="${craft.id}" data-loot-id="${loot.id}">
+        <div class="loot-entry-header">
+          <span class="loot-entry-zone">${zoneLabel}</span>
+          <span class="loot-entry-status locked">${ui.lootZoneLocked}</span>
         </div>
-        <p class="item-desc">${craftLoc?.description ?? craft.description}</p>
-        <span class="badge maxed">${ui.lootOwned}</span>
-      </div>`
-    : !zoneUnlocked
-      ? `<div class="loot-craft-panel locked">
-          <span class="loot-panel-tag">${ui.lootCraftsInto}</span>
-          <div class="loot-panel-head">
-            <span class="item-icon">${craft.icon}</span>
-            <strong>${craftLoc?.name ?? craft.name}</strong>
-          </div>
-          <p class="item-desc">${craftLoc?.description ?? craft.description}</p>
-          <span class="badge locked">${ui.lootZoneLocked}</span>
-        </div>`
-      : `<div class="loot-craft-panel">
-          <span class="loot-panel-tag">${ui.lootCraftsInto}</span>
-          <div class="loot-panel-head">
-            <span class="item-icon">${craft.icon}</span>
-            <strong>${craftLoc?.name ?? craft.name}</strong>
-          </div>
-          <p class="item-desc">${craftLoc?.description ?? craft.description}</p>
-          <button class="btn btn-sm ${canCraft ? 'btn-ready' : 'disabled'}"
-            data-action="craft-zone-loot" data-loot-craft="${craft.id}"
-            ${canCraft ? '' : 'disabled'}>
-            ${ui.craftWithLoot} (${craft.shardCost} ${loot.icon})
-          </button>
-        </div>`;
+        <div class="loot-entry-locked-body">
+          <span class="loot-entry-icon-sm">${craft.icon}</span>
+          <span class="loot-entry-locked-text">${craftName}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  const action = owned
+    ? `<div class="loot-entry-owned"><span>✓</span> ${ui.lootOwned}</div>`
+    : `<button class="btn btn-sm loot-entry-action ${canCraft ? 'btn-ready' : 'disabled'}"
+        data-action="craft-zone-loot" data-loot-craft="${craft.id}"
+        ${canCraft ? '' : 'disabled'}>
+        ${ui.craftWithLoot} · ${craft.shardCost} ${loot.icon}
+      </button>`;
 
   return `
-    <div class="loot-pair-card ${owned ? 'is-owned' : ''} ${!zoneUnlocked ? 'is-locked' : ''}"
-      data-loot-pair="${craft.id}" data-loot-id="${loot.id}">
-      <div class="loot-pair-zone">${zoneLoc?.name ?? loot.zoneId}</div>
-      <div class="loot-pair-flow">
-        <div class="loot-shard-panel">
-          <span class="loot-panel-tag">${ui.lootDropsIn}</span>
-          <div class="loot-panel-head">
-            <span class="item-icon">${loot.icon}</span>
-            <strong>${lootLoc?.name ?? loot.name}</strong>
+    <div class="loot-entry ${owned ? 'is-owned' : ''}" data-loot-pair="${craft.id}" data-loot-id="${loot.id}">
+      <div class="loot-entry-header">
+        <span class="loot-entry-zone">${zoneLabel}</span>
+        <span class="loot-entry-count" data-bind="loot-count">${count} / ${craft.shardCost}</span>
+      </div>
+      <div class="loot-entry-pipeline">
+        <div class="loot-entry-node is-material">
+          <div class="loot-entry-icon">${loot.icon}</div>
+          <div class="loot-entry-meta">
+            <span class="loot-entry-label">${ui.lootDropsIn}</span>
+            <span class="loot-entry-name">${lootName}</span>
           </div>
-          <p class="item-desc">${lootLoc?.description ?? loot.description}</p>
+        </div>
+        <div class="loot-entry-bridge" aria-hidden="true">
           <div class="loot-progress-wrap">
             <div class="loot-progress-bar" data-bind="loot-progress" style="width:${progress}%"></div>
           </div>
-          <span class="loot-progress-label" data-bind="loot-count">${count} / ${craft.shardCost}</span>
+          <span class="loot-entry-pct" data-bind="loot-pct">${progress}%</span>
         </div>
-        <div class="loot-pair-arrow" aria-hidden="true">→</div>
-        ${craftPanel}
+        <div class="loot-entry-node is-craft">
+          <div class="loot-entry-icon">${craft.icon}</div>
+          <div class="loot-entry-meta">
+            <span class="loot-entry-label">${ui.lootCraftsInto}</span>
+            <span class="loot-entry-name">${craftName}</span>
+          </div>
+        </div>
+      </div>
+      <p class="loot-entry-hint">${craftHint}</p>
+      ${action}
+    </div>
+  `;
+}
+
+function buildPatchNotesHTML(ctx: RenderContext): string {
+  const { theme, locale, ui } = ctx;
+  const notes = locale.patchNotes;
+  if (!notes?.items?.length || !theme.version) return '';
+
+  const items = notes.items.map((item) => `<li>${item}</li>`).join('');
+  const headline = notes.headline
+    ? `<p class="modal-desc patch-notes-headline">${notes.headline}</p>`
+    : '';
+
+  return `
+    <div class="modal-backdrop" data-patch-notes data-modal-backdrop>
+      <div class="modal-card modal-patch-notes" role="dialog" aria-labelledby="patch-notes-title">
+        <div class="modal-header">
+          <h2 class="modal-title" id="patch-notes-title">${ui.patchNotesTitle} · v${theme.version}</h2>
+          <button class="modal-close" data-action="close-patch-notes" type="button" aria-label="${ui.close}">×</button>
+        </div>
+        ${headline}
+        <ul class="patch-notes-list">${items}</ul>
+        <button class="btn btn-primary btn-block patch-notes-dismiss" data-action="close-patch-notes" type="button">
+          ${ui.patchNotesGotIt}
+        </button>
       </div>
     </div>
   `;
+}
+
+function computePatchNotesKey(ctx: RenderContext): string {
+  const items = ctx.locale.patchNotes?.items?.join('|') ?? '';
+  return `${ctx.currentLocale}|${ctx.theme.version ?? ''}|${items}`;
+}
+
+function syncPatchNotes(
+  root: HTMLElement,
+  ctx: RenderContext,
+  open: boolean,
+  keyRef: { key: string },
+): void {
+  const hasNotes = (ctx.locale.patchNotes?.items?.length ?? 0) > 0;
+  const shouldOpen = open && ctx.showPatchNotes && hasNotes;
+  const existing = root.querySelector('[data-patch-notes]');
+
+  if (!shouldOpen) {
+    existing?.remove();
+    if (!open) keyRef.key = '';
+    return;
+  }
+
+  const structureKey = computePatchNotesKey(ctx);
+  if (!existing || structureKey !== keyRef.key) {
+    existing?.remove();
+    root.insertAdjacentHTML('beforeend', buildPatchNotesHTML(ctx));
+    keyRef.key = structureKey;
+  }
 }
 
 function buildLootWorkshopHTML(ctx: RenderContext): string {
@@ -293,12 +353,15 @@ function buildLootWorkshopHTML(ctx: RenderContext): string {
   return `
     <div class="modal-backdrop" data-loot-workshop data-modal-backdrop>
       <div class="modal-card modal-loot-workshop" role="dialog">
-        <div class="modal-header">
-          <h2 class="modal-title">${ui.zoneLootWorkshop}</h2>
-          <button class="modal-close" data-action="close-loot-workshop" type="button" aria-label="${ui.close}">×</button>
+        <div class="loot-workshop-head">
+          <div class="modal-header">
+            <h2 class="modal-title">${ui.zoneLootWorkshop}</h2>
+            <button class="modal-close" data-action="close-loot-workshop" type="button" aria-label="${ui.close}">×</button>
+          </div>
+          <span class="scroll-hint loot-scroll-hint" data-bind="loot-scroll-hint" hidden>${ui.lootWorkshopScrollHint}</span>
         </div>
-        <p class="modal-desc">${ui.zoneLootWorkshopDesc}</p>
-        <div class="loot-pair-list">${cards}</div>
+        <p class="modal-desc loot-modal-desc">${ui.zoneLootWorkshopDesc}</p>
+        <div class="loot-entry-list" data-scroll-panel="loot-workshop">${cards}</div>
       </div>
     </div>
   `;
@@ -306,6 +369,17 @@ function buildLootWorkshopHTML(ctx: RenderContext): string {
 
 function computeLootStructureKey(ctx: RenderContext): string {
   return `${ctx.currentLocale}|${(ctx.theme.zoneLootCrafts ?? []).map((c) => c.id).join(',')}|${ctx.state.unlockedZones.join(',')}`;
+}
+
+function updateLootWorkshopScroll(root: HTMLElement): void {
+  const list = root.querySelector<HTMLElement>('[data-scroll-panel="loot-workshop"]');
+  if (!list) return;
+
+  const overflows = list.scrollHeight > list.clientHeight + 4;
+  list.classList.toggle('has-overflow', overflows);
+
+  const hint = root.querySelector<HTMLElement>('[data-bind="loot-scroll-hint"]');
+  if (hint) hint.hidden = !overflows;
 }
 
 function patchLootWorkshop(root: HTMLElement, ctx: RenderContext): void {
@@ -326,19 +400,25 @@ function patchLootWorkshop(root: HTMLElement, ctx: RenderContext): void {
     const countText = `${count} / ${craft.shardCost}`;
     if (countEl && countEl.textContent !== countText) countEl.textContent = countText;
 
+    const pctEl = card.querySelector('[data-bind="loot-pct"]');
+    const pctText = `${progress}%`;
+    if (pctEl && pctEl.textContent !== pctText) pctEl.textContent = pctText;
+
     const bar = card.querySelector<HTMLElement>('[data-bind="loot-progress"]');
     if (bar) bar.style.width = `${progress}%`;
 
     if (owned || !zoneUnlocked) continue;
 
     const canCraft = canCraftLootItem(state, theme, craft.id);
-    const btn = card.querySelector<HTMLButtonElement>('[data-action="craft-zone-loot"]');
+    const btn = card.querySelector<HTMLButtonElement>('.loot-entry-action');
     if (btn) {
       btn.disabled = !canCraft;
       btn.classList.toggle('btn-ready', canCraft);
       btn.classList.toggle('disabled', !canCraft);
     }
   }
+
+  updateLootWorkshopScroll(root);
 }
 
 function syncLootWorkshop(
@@ -359,6 +439,7 @@ function syncLootWorkshop(
     existing?.remove();
     root.insertAdjacentHTML('beforeend', buildLootWorkshopHTML(ctx));
     lootKeyRef.key = structureKey;
+    requestAnimationFrame(() => updateLootWorkshopScroll(root));
     return;
   }
 
@@ -390,7 +471,7 @@ function syncPrestigeShop(
 }
 
 function buildHTML(ctx: RenderContext): string {
-  const { engine, state, theme, locale, ui, baseGps, gps, clickStatus, onQuest, nextBuyId, currentLocale, tutorial, showUpdateBanner } = ctx;
+  const { engine, state, theme, locale, ui, baseGps, gps, clickStatus, onQuest, nextBuyId, currentLocale, tutorial } = ctx;
   const prestigePts = calcPrestigePoints(state, theme);
   const quest = state.activeQuest;
   const zone = theme.zones.find((z) => z.id === state.currentZoneId)!;
@@ -460,20 +541,12 @@ function buildHTML(ctx: RenderContext): string {
         </div>
       </header>
 
-      ${engine.offlineEarnings || showUpdateBanner ? `
+      ${engine.offlineEarnings ? `
         <div class="banner-stack">
-          ${engine.offlineEarnings ? `
-            <div class="offline-banner">
-              <p>${ui.offlineEarnings}: <strong>+${formatNumber(engine.offlineEarnings.gold)}</strong> (${formatTime(engine.offlineEarnings.seconds)})</p>
-              <button class="btn btn-primary" data-action="collect-offline">${ui.collect}</button>
-            </div>
-          ` : ''}
-          ${showUpdateBanner ? `
-            <div class="update-banner">
-              <p class="update-banner-text">🎉 ${ui.updateBanner}</p>
-              <button class="btn btn-sm update-banner-dismiss" data-action="dismiss-banner" type="button">${ui.close}</button>
-            </div>
-          ` : ''}
+          <div class="offline-banner">
+            <p>${ui.offlineEarnings}: <strong>+${formatNumber(engine.offlineEarnings.gold)}</strong> (${formatTime(engine.offlineEarnings.seconds)})</p>
+            <button class="btn btn-primary" data-action="collect-offline">${ui.collect}</button>
+          </div>
         </div>
       ` : ''}
 
@@ -852,7 +925,7 @@ function buildContext(
     currentLocale: localeManager.locale,
     tutorial,
     displayUsername: '',
-    showUpdateBanner: false,
+    showPatchNotes: false,
   });
 
   return {
@@ -869,7 +942,7 @@ function buildContext(
     currentLocale: localeManager.locale,
     tutorial,
     displayUsername: getDisplayUsername(),
-    showUpdateBanner: shouldShowUpdateBanner(theme.version),
+    showPatchNotes: shouldShowPatchNotes(theme.version),
   };
 }
 
@@ -886,8 +959,10 @@ export function mountGameUI(
   let renderScheduled = false;
   let prestigeShopOpen = false;
   let lootWorkshopOpen = false;
+  let patchNotesOpen = shouldShowPatchNotes(engine.theme.version);
   const shopKeyRef = { key: '' };
   const lootKeyRef = { key: '' };
+  const patchNotesKeyRef = { key: '' };
   const lastPartyScrollTarget = { id: '' };
 
   root.addEventListener('click', (e) => {
@@ -899,6 +974,12 @@ export function mountGameUI(
     }
     if (lootWorkshopOpen && el.closest('[data-loot-workshop]') === el) {
       lootWorkshopOpen = false;
+      scheduleRender();
+      return;
+    }
+    if (patchNotesOpen && el.closest('[data-patch-notes]') === el) {
+      patchNotesOpen = false;
+      if (engine.theme.version) dismissPatchNotes(engine.theme.version);
       scheduleRender();
       return;
     }
@@ -925,8 +1006,9 @@ export function mountGameUI(
       case 'collect-offline':
         engine.collectOffline();
         break;
-      case 'dismiss-banner':
-        if (engine.theme.version) dismissUpdateBanner(engine.theme.version);
+      case 'close-patch-notes':
+        patchNotesOpen = false;
+        if (engine.theme.version) dismissPatchNotes(engine.theme.version);
         scheduleRender();
         break;
       case 'start-quest':
@@ -956,8 +1038,10 @@ export function mountGameUI(
           wasOnQuest = false;
           prestigeShopOpen = false;
           lootWorkshopOpen = false;
+          patchNotesOpen = false;
           shopKeyRef.key = '';
           lootKeyRef.key = '';
+          patchNotesKeyRef.key = '';
         }
         break;
       case 'open-prestige-shop':
@@ -1006,6 +1090,7 @@ export function mountGameUI(
     scrollPartyListIfNeeded(root, lastPartyScrollTarget);
     syncPrestigeShop(root, ctx, prestigeShopOpen, shopKeyRef);
     syncLootWorkshop(root, ctx, lootWorkshopOpen, lootKeyRef);
+    syncPatchNotes(root, ctx, patchNotesOpen, patchNotesKeyRef);
   };
 
   const scheduleRender = () => {
@@ -1021,6 +1106,7 @@ export function mountGameUI(
     tutorial.updateSteps(getLocale().tutorial);
     structureKey = '';
     shopKeyRef.key = '';
+    patchNotesKeyRef.key = '';
     scheduleRender();
   });
 

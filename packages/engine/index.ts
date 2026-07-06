@@ -10,6 +10,12 @@ export { LocaleManager, detectLocale, type LocaleId } from './core/LocaleManager
 export type { GameLocale, LocalizedEntity } from './i18n/types.ts';
 export { ProfileManager, buildStats, type PlayerProfile, type PlayerStats } from './core/ProfileManager.ts';
 export { AutoSaveManager } from './core/AutoSaveManager.ts';
-export { shouldShowUpdateBanner, dismissUpdateBanner } from './core/UpdateBanner.ts';
+export {
+  shouldShowPatchNotes,
+  dismissPatchNotes,
+  shouldShowUpdateBanner,
+  dismissUpdateBanner,
+} from './core/PatchNotes.ts';
+export type { PatchNotesContent } from './i18n/types.ts';
 export { LeaderboardClient, resolveLeaderboardUrl, type LeaderboardEntry, type Prestige100Entry } from './services/LeaderboardClient.ts';
 export { PRESTIGE_100_GOAL } from './core/ProfileManager.ts';

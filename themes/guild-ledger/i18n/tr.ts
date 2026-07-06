@@ -181,7 +181,8 @@ export const tr: GameLocale = {
     createUsernameHint: 'Sıralamada görünmek için bir kullanıcı adı seç. Harf, rakam ve alt çizgi kullanabilirsin.',
     usernameInvalid: 'Geçersiz kullanıcı adı (3-16 karakter, a-z, 0-9, _)',
     profileNotFound: 'Profil bulunamadı.',
-    updateBanner: 'v0.5.0 — Bölge ganimetleri! Nadir parçalar topla, kalıcı ekipman üret.',
+    patchNotesTitle: 'Yenilikler',
+    patchNotesGotIt: 'Anladım, devam et',
     prestigeShop: 'İtibar Pazarı',
     prestigeShopDesc: 'Prestige puanlarınla kalıcı bonuslar al. Harcadığın puanlar sıralamayı düşürmez.',
     prestigeBalance: 'Harcayabilir',
@@ -201,6 +202,7 @@ export const tr: GameLocale = {
     lootZoneLocked: 'Bölgeyi aç',
     lootCraftsInto: 'Üretir',
     lootDropsIn: 'Düşer',
+    lootWorkshopScrollHint: '↓ Kaydır — tüm bölgeler',
   },
   zones: {
     rat_cellar: { name: 'Sıçan Bodrumu', description: 'Yeni maceracılar için ucuz ölüm.' },
@@ -317,5 +319,14 @@ export const tr: GameLocale = {
     welcomeNew: 'Defter açıldı. İlk kiracın masada — gelir akıyor.',
     welcomeBack: 'Defter açıldı. Bugün de kâr hedefliyoruz.',
     reset: 'Defter sıfırlandı. Yeni mali yıl başladı.',
+  },
+  patchNotes: {
+    headline: 'Bölge ganimet atölyesi yenilendi ve güncelleme notları eklendi.',
+    items: [
+      'Bölge ganimet atölyesi arayüzü baştan tasarlandı — malzeme, ilerleme ve ürün tek kartta',
+      'Mobilde daha okunaklı dikey düzen',
+      'Yeni sürüm geldiğinde tek seferlik yenilik notları modalı',
+      'Küçük düzenlemeler ve performans iyileştirmeleri',
+    ],
   },
 };

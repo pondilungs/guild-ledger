@@ -6,6 +6,11 @@ export interface LocalizedEntity {
   description: string;
 }
 
+export interface PatchNotesContent {
+  headline?: string;
+  items: string[];
+}
+
 export interface GameLocale {
   tagline: string;
   prestigeCurrency: string;
@@ -66,7 +71,8 @@ export interface GameLocale {
     createUsernameHint: string;
     usernameInvalid: string;
     profileNotFound: string;
-    updateBanner: string;
+    patchNotesTitle: string;
+    patchNotesGotIt: string;
     prestigeShop: string;
     prestigeShopDesc: string;
     prestigeBalance: string;
@@ -86,6 +92,7 @@ export interface GameLocale {
     lootZoneLocked: string;
     lootCraftsInto: string;
     lootDropsIn: string;
+    lootWorkshopScrollHint: string;
   };
   zones: Record<string, LocalizedEntity>;
   parties: Record<string, LocalizedEntity>;
@@ -100,4 +107,5 @@ export interface GameLocale {
     welcomeBack: string;
     reset: string;
   };
+  patchNotes?: PatchNotesContent;
 }

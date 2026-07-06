@@ -181,7 +181,8 @@ export const en: GameLocale = {
     createUsernameHint: 'Pick a username to appear on the leaderboard. Letters, numbers, and underscores only.',
     usernameInvalid: 'Invalid username (3-16 chars, a-z, 0-9, _)',
     profileNotFound: 'Profile not found.',
-    updateBanner: 'v0.5.0 — Zone loot! Collect rare shards and craft permanent gear.',
+    patchNotesTitle: 'What\'s New',
+    patchNotesGotIt: 'Got it, let\'s play',
     prestigeShop: 'Reputation Market',
     prestigeShopDesc: 'Buy permanent bonuses with spendable prestige. Lifetime total stays on the leaderboard.',
     prestigeBalance: 'Spendable',
@@ -201,6 +202,7 @@ export const en: GameLocale = {
     lootZoneLocked: 'Unlock zone',
     lootCraftsInto: 'Crafts into',
     lootDropsIn: 'Drops in',
+    lootWorkshopScrollHint: '↓ Scroll for all zones',
   },
   zones: {
     rat_cellar: { name: 'Rat Cellar', description: 'Cheap deaths for fresh adventurers.' },
@@ -317,5 +319,14 @@ export const en: GameLocale = {
     welcomeNew: 'Ledger open. First tenant at the desk — income flowing.',
     welcomeBack: 'Ledger open. Another day, another profit target.',
     reset: 'Ledger reset. New fiscal year.',
+  },
+  patchNotes: {
+    headline: 'Zone loot workshop refresh plus one-time patch notes on update.',
+    items: [
+      'Zone loot workshop UI rebuilt — material, progress, and craft on one card',
+      'Cleaner vertical layout on mobile',
+      'One-time patch notes modal when a new version ships',
+      'Minor polish and performance tweaks',
+    ],
   },
 };
