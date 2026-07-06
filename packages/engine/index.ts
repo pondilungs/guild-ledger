@@ -17,5 +17,4 @@ export {
   dismissUpdateBanner,
 } from './core/PatchNotes.ts';
 export type { PatchNotesContent } from './i18n/types.ts';
-export { LeaderboardClient, resolveLeaderboardUrl, type LeaderboardEntry, type Prestige100Entry } from './services/LeaderboardClient.ts';
-export { PRESTIGE_100_GOAL } from './core/ProfileManager.ts';
+export { LeaderboardClient, resolveLeaderboardUrl, type LeaderboardEntry } from './services/LeaderboardClient.ts';

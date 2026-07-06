@@ -188,12 +188,7 @@ export const tr: GameLocale = {
     prestigeBalance: 'Harcayabilir',
     prestigeLifetime: 'Toplam itibar',
     buyWithPrestige: 'Satın al',
-    leaderboardTabOverall: 'Genel',
-    leaderboardTabPrestige100: '20 İtibar',
-    prestige100Race: '20 İtibara İlk Ulaşanlar',
-    prestige100RaceDesc: 'Lifetime itibarı 20\'ye ilk ulaşan oyuncular. Kim önce ulaştıysa üstte.',
-    prestige100ReachedAt: 'Ulaşma',
-    prestige100Empty: 'Henüz kimse 20 itibara ulaşmadı. İlk sen ol!',
+
     zoneLootWorkshop: 'Bölge Ganimetleri',
     zoneLootWorkshopDesc: 'Bölgelerde çok nadir parça düşer. Biriktirmek saatler/günler sürebilir — ama üretilen ekipman kalıcı ek gelir verir, prestige sonrası da kalır.',
     zoneLootShards: 'Parçaların',
@@ -321,11 +316,11 @@ export const tr: GameLocale = {
     reset: 'Defter sıfırlandı. Yeni mali yıl başladı.',
   },
   patchNotes: {
-    headline: 'Bölge ganimet atölyesi yenilendi, sıralama tablosu sıfırlandı.',
+    headline: '20 İtibar yarışı kaldırıldı, sıralama sadeleştirildi.',
     items: [
-      'Bölge ganimet atölyesi arayüzü baştan tasarlandı — kaydırılabilir liste, mobil uyumlu',
+      'Sıralama ekranından 20 İtibar tablosu kaldırıldı — tek genel sıralama kaldı',
+      'Bölge ganimet atölyesi kaydırılabilir ve mobil uyumlu',
       'Yeni sürüm geldiğinde tek seferlik yenilik notları modalı',
-      'Online sıralama ve 20 İtibar yarışı yeni sezona başladı — herkes sıfırdan',
       'Küçük düzenlemeler ve performans iyileştirmeleri',
     ],
   },

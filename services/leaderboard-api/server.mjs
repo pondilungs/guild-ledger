@@ -58,14 +58,6 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (req.method === 'GET' && url.pathname === '/leaderboard/prestige100') {
-      const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? 50)));
-      const racers = await store.getPrestige100Race(limit);
-      const entries = racers.map((entry, i) => ({ rank: i + 1, ...entry }));
-      send(res, 200, entries);
-      return;
-    }
-
     if (req.method === 'DELETE' && url.pathname === '/admin/profiles') {
       if (!isAdmin(req)) {
         send(res, 401, { error: 'unauthorized' });

@@ -25,12 +25,8 @@ async function deleteProfile(id) {
 }
 
 const leaderboard = await fetchJson('/leaderboard?limit=100');
-const prestige100 = await fetchJson('/leaderboard/prestige100?limit=100');
 
-const ids = new Set([
-  ...leaderboard.map((entry) => entry.profile.id),
-  ...prestige100.map((entry) => entry.id),
-]);
+const ids = new Set(leaderboard.map((entry) => entry.profile.id));
 
 let deleted = 0;
 for (const id of ids) {

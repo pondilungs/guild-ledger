@@ -188,12 +188,7 @@ export const en: GameLocale = {
     prestigeBalance: 'Spendable',
     prestigeLifetime: 'Lifetime rep.',
     buyWithPrestige: 'Buy',
-    leaderboardTabOverall: 'Overall',
-    leaderboardTabPrestige100: '20 Rep.',
-    prestige100Race: 'First to 20 Reputation',
-    prestige100RaceDesc: 'Players who were first to reach 20 lifetime reputation. Earliest at the top.',
-    prestige100ReachedAt: 'Reached',
-    prestige100Empty: 'No one has hit 20 reputation yet. Be the first!',
+
     zoneLootWorkshop: 'Zone Loot',
     zoneLootWorkshopDesc: 'Shards drop very rarely while you farm each zone. Stockpiling takes hours or days — crafted gear grants permanent extra income and survives prestige.',
     zoneLootShards: 'Your shards',
@@ -321,11 +316,11 @@ export const en: GameLocale = {
     reset: 'Ledger reset. New fiscal year.',
   },
   patchNotes: {
-    headline: 'Zone loot workshop refresh and a fresh leaderboard season.',
+    headline: 'Removed the First to 20 Rep race — one leaderboard now.',
     items: [
-      'Zone loot workshop UI rebuilt — scrollable list, mobile-friendly layout',
+      'Removed the 20 Rep tab from rankings — overall leaderboard only',
+      'Zone loot workshop is scrollable and mobile-friendly',
       'One-time patch notes modal when a new version ships',
-      'Online leaderboard and First to 20 Rep race reset — everyone starts fresh',
       'Minor polish and performance tweaks',
     ],
   },
