@@ -25,7 +25,7 @@ export interface PlayerProfile {
   stats: PlayerStats;
 }
 
-export const PRESTIGE_100_GOAL = 40;
+export const PRESTIGE_100_GOAL = 20;
 
 function generateId(): string {
   return crypto.randomUUID();

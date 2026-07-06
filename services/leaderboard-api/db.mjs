@@ -5,7 +5,7 @@ import { MongoClient } from 'mongodb';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_FILE = path.join(__dirname, 'data', 'leaderboard.json');
-const PRESTIGE_100_GOAL = 40;
+const PRESTIGE_100_GOAL = 20;
 
 export function compareProfiles(a, b) {
   const sa = a.stats ?? {};
