@@ -45,6 +45,13 @@ mountGameUI(engine, app, {
   getDisplayUsername: social.refreshHeaderHint,
 });
 
+engine.onProfileSync(() => {
+  profileManager.updateFromState(engine.state, guildLedgerTheme);
+  if (profileManager.hasUsername()) {
+    void leaderboardClient.upsertProfile(profileManager.current);
+  }
+});
+
 engine.start();
 autoSave.start();
 social.openSetupIfNeeded();

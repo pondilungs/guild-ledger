@@ -45,6 +45,7 @@ export class GameEngine {
   state: GameState;
   private loop: GameLoop;
   private listeners = new Set<GameListener>();
+  private profileSyncHooks = new Set<() => void>();
   private sessionStart = Date.now();
   offlineEarnings: { gold: number; seconds: number; capped: boolean } | null = null;
   eventLog: LogEntry[] = [];
@@ -115,6 +116,15 @@ export class GameEngine {
   subscribe(fn: GameListener): () => void {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
+  }
+
+  onProfileSync(fn: () => void): () => void {
+    this.profileSyncHooks.add(fn);
+    return () => this.profileSyncHooks.delete(fn);
+  }
+
+  private syncProfile(): void {
+    for (const fn of this.profileSyncHooks) fn();
   }
 
   notify(): void {
@@ -306,6 +316,7 @@ export class GameEngine {
     this.log(this.getLocale().flavor.prestigeMsg(points), 'milestone');
     trackEvent({ type: 'prestige', points, total: this.state.prestigeLifetime });
     this.persist();
+    this.syncProfile();
     this.notify();
     return true;
   }

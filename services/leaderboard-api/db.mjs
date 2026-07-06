@@ -5,6 +5,7 @@ import { MongoClient } from 'mongodb';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_FILE = path.join(__dirname, 'data', 'leaderboard.json');
+const PRESTIGE_100_GOAL = 100;
 
 export function compareProfiles(a, b) {
   const sa = a.stats ?? {};
@@ -21,9 +22,11 @@ export function compareProfiles(a, b) {
 function readFileDb() {
   try {
     const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!parsed.prestige100Race) parsed.prestige100Race = {};
+    return parsed;
   } catch {
-    return { profiles: {} };
+    return { profiles: {}, prestige100Race: {} };
   }
 }
 
@@ -49,10 +52,30 @@ function createFileStore() {
     async upsertProfile(profile) {
       const db = readFileDb();
       db.profiles[profile.id] = profile;
+      await recordPrestige100File(db, profile);
       writeFileDb(db);
       return profile;
     },
+    async getPrestige100Race(limit) {
+      const db = readFileDb();
+      return Object.values(db.prestige100Race)
+        .sort((a, b) => a.reachedAt - b.reachedAt)
+        .slice(0, limit);
+    },
     async close() {},
+  };
+}
+
+async function recordPrestige100File(db, profile) {
+  if (!profile.prestige100At) return;
+  const lifetime = profile.stats?.prestigePoints ?? 0;
+  if (lifetime < PRESTIGE_100_GOAL) return;
+  if (db.prestige100Race[profile.id]) return;
+  db.prestige100Race[profile.id] = {
+    id: profile.id,
+    username: profile.username,
+    reachedAt: profile.prestige100At,
+    prestigeAtReach: lifetime,
   };
 }
 
@@ -61,7 +84,10 @@ async function createMongoStore(uri) {
   await client.connect();
   const dbName = process.env.MONGODB_DB_NAME ?? 'guild-ledger';
   const collectionName = process.env.MONGODB_COLLECTION ?? 'profiles';
-  const col = client.db(dbName).collection(collectionName);
+  const raceCollectionName = process.env.MONGODB_PRESTIGE100_COLLECTION ?? 'prestige100_race';
+  const db = client.db(dbName);
+  const col = db.collection(collectionName);
+  const raceCol = db.collection(raceCollectionName);
 
   await col.createIndex({ id: 1 }, { unique: true });
   await col.createIndex({ username: 1 }, { unique: true });
@@ -70,8 +96,10 @@ async function createMongoStore(uri) {
     'stats.prestigeCount': -1,
     'stats.totalGoldEarned': -1,
   });
+  await raceCol.createIndex({ id: 1 }, { unique: true });
+  await raceCol.createIndex({ reachedAt: 1 });
 
-  console.log(`Leaderboard storage: MongoDB (${dbName}.${collectionName})`);
+  console.log(`Leaderboard storage: MongoDB (${dbName}.${collectionName}, ${raceCollectionName})`);
 
   return {
     mode: 'mongo',
@@ -91,12 +119,39 @@ async function createMongoStore(uri) {
     },
     async upsertProfile(profile) {
       await col.replaceOne({ id: profile.id }, profile, { upsert: true });
+      await recordPrestige100Mongo(raceCol, profile);
       return profile;
+    },
+    async getPrestige100Race(limit) {
+      return raceCol
+        .find({})
+        .sort({ reachedAt: 1 })
+        .limit(limit)
+        .toArray();
     },
     async close() {
       await client.close();
     },
   };
+}
+
+async function recordPrestige100Mongo(raceCol, profile) {
+  if (!profile.prestige100At) return;
+  const lifetime = profile.stats?.prestigePoints ?? 0;
+  if (lifetime < PRESTIGE_100_GOAL) return;
+
+  await raceCol.updateOne(
+    { id: profile.id },
+    {
+      $setOnInsert: {
+        id: profile.id,
+        username: profile.username,
+        reachedAt: profile.prestige100At,
+        prestigeAtReach: lifetime,
+      },
+    },
+    { upsert: true },
+  );
 }
 
 export async function createStore() {

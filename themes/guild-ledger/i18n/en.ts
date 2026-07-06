@@ -187,6 +187,12 @@ export const en: GameLocale = {
     prestigeBalance: 'Spendable',
     prestigeLifetime: 'Lifetime rep.',
     buyWithPrestige: 'Buy',
+    leaderboardTabOverall: 'Overall',
+    leaderboardTabPrestige100: '100 Rep.',
+    prestige100Race: 'First to 100 Reputation',
+    prestige100RaceDesc: 'Players who were first to reach 100 lifetime reputation. Earliest at the top.',
+    prestige100ReachedAt: 'Reached',
+    prestige100Empty: 'No one has hit 100 reputation yet. Be the first!',
   },
   zones: {
     rat_cellar: { name: 'Rat Cellar', description: 'Cheap deaths for fresh adventurers.' },

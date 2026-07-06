@@ -187,6 +187,12 @@ export const tr: GameLocale = {
     prestigeBalance: 'Harcayabilir',
     prestigeLifetime: 'Toplam itibar',
     buyWithPrestige: 'Satın al',
+    leaderboardTabOverall: 'Genel',
+    leaderboardTabPrestige100: '100 İtibar',
+    prestige100Race: '100 İtibara İlk Ulaşanlar',
+    prestige100RaceDesc: 'Lifetime itibarı 100\'e ilk ulaşan oyuncular. Kim önce ulaştıysa üstte.',
+    prestige100ReachedAt: 'Ulaşma',
+    prestige100Empty: 'Henüz kimse 100 itibara ulaşmadı. İlk sen ol!',
   },
   zones: {
     rat_cellar: { name: 'Sıçan Bodrumu', description: 'Yeni maceracılar için ucuz ölüm.' },

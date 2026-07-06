@@ -954,6 +954,48 @@ body {
   width: min(560px, 100%);
 }
 
+.leaderboard-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  padding: 0.2rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.leaderboard-tab {
+  flex: 1;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.leaderboard-tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.leaderboard-head.prestige100-head,
+.prestige100-row {
+  grid-template-columns: 3rem 1fr 3.5rem 7.5rem;
+}
+
+.prestige100-row {
+  cursor: default;
+}
+
+.lb-time {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .modal-prestige-shop {
   width: min(520px, 100%);
 }

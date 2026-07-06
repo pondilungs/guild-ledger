@@ -1,15 +1,18 @@
 import { formatNumber } from '../core/format.ts';
 import type { PlayerProfile, ProfileManager } from '../core/ProfileManager.ts';
-import type { LeaderboardClient, LeaderboardEntry } from '../services/LeaderboardClient.ts';
+import type { LeaderboardClient, LeaderboardEntry, Prestige100Entry } from '../services/LeaderboardClient.ts';
 import type { GameLocale } from '../i18n/types.ts';
 import type { LocaleManager } from '../core/LocaleManager.ts';
 
 export type ModalView = 'none' | 'setup' | 'leaderboard' | 'profile';
+export type LeaderboardTab = 'overall' | 'prestige100';
 
 export interface ModalState {
   view: ModalView;
   profileId: string | null;
+  leaderboardTab: LeaderboardTab;
   entries: LeaderboardEntry[];
+  prestige100Entries: Prestige100Entry[];
   loading: boolean;
   error: string | null;
   viewedProfile: PlayerProfile | null;
@@ -19,7 +22,9 @@ export function createModalState(): ModalState {
   return {
     view: 'none',
     profileId: null,
+    leaderboardTab: 'overall',
     entries: [],
+    prestige100Entries: [],
     loading: false,
     error: null,
     viewedProfile: null,
@@ -34,6 +39,16 @@ function formatPlayTime(sec: number): string {
 
 function zoneName(locale: GameLocale, zoneId: string): string {
   return locale.zones[zoneId]?.name ?? zoneId;
+}
+
+function formatReachedAt(ts: number, localeId: string): string {
+  return new Date(ts).toLocaleString(localeId === 'tr' ? 'tr-TR' : 'en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 function statRow(label: string, value: string): string {
@@ -78,6 +93,7 @@ export function renderModals(
   locale: GameLocale,
   selfProfile: PlayerProfile,
   leaderboardOnline: boolean,
+  currentLocale: 'tr' | 'en' = 'tr',
 ): string {
   if (state.view === 'none') return '';
 
@@ -99,7 +115,12 @@ export function renderModals(
   }
 
   if (state.view === 'leaderboard') {
-    const rows = state.entries.length > 0
+    const tab = state.leaderboardTab;
+    const offlineNote = !leaderboardOnline && !state.loading
+      ? `<p class="modal-note">${ui.leaderboardOffline}</p>`
+      : '';
+
+    const overallRows = state.entries.length > 0
       ? state.entries.map((entry) => {
           const isSelf = entry.profile.id === selfProfile.id;
           return `
@@ -114,26 +135,57 @@ export function renderModals(
         }).join('')
       : `<p class="modal-empty">${state.loading ? ui.leaderboardLoading : ui.leaderboardEmpty}</p>`;
 
-    const offlineNote = !leaderboardOnline && !state.loading
-      ? `<p class="modal-note">${ui.leaderboardOffline}</p>`
-      : '';
+    const prestige100Rows = state.prestige100Entries.length > 0
+      ? state.prestige100Entries.map((entry) => {
+          const isSelf = entry.id === selfProfile.id;
+          return `
+            <div class="leaderboard-row prestige100-row ${isSelf ? 'is-self' : ''}">
+              <span class="lb-rank">#${entry.rank}</span>
+              <span class="lb-name">${entry.username}</span>
+              <span class="lb-prestige">${entry.prestigeAtReach}</span>
+              <span class="lb-time">${formatReachedAt(entry.reachedAt, currentLocale)}</span>
+            </div>
+          `;
+        }).join('')
+      : `<p class="modal-empty">${state.loading ? ui.leaderboardLoading : ui.prestige100Empty}</p>`;
 
-    return `
-      <div class="modal-backdrop" data-modal-backdrop>
-        <div class="modal-card modal-leaderboard" role="dialog">
-          <div class="modal-header">
-            <h2 class="modal-title">${ui.leaderboard}</h2>
-            <button class="modal-close" data-action="close-modal" type="button" aria-label="${ui.close}">×</button>
+    const listContent = tab === 'prestige100'
+      ? `
+          <p class="modal-desc">${ui.prestige100RaceDesc}</p>
+          <div class="leaderboard-head prestige100-head">
+            <span>${ui.rank}</span>
+            <span>${ui.player}</span>
+            <span>${ui.prestige}</span>
+            <span>${ui.prestige100ReachedAt}</span>
           </div>
-          ${offlineNote}
-          ${state.error ? `<p class="modal-error">${state.error}</p>` : ''}
+          <div class="leaderboard-list">${prestige100Rows}</div>
+        `
+      : `
           <div class="leaderboard-head">
             <span>${ui.rank}</span>
             <span>${ui.player}</span>
             <span>${ui.prestige}</span>
             <span>${ui.statTotalGold}</span>
           </div>
-          <div class="leaderboard-list">${rows}</div>
+          <div class="leaderboard-list">${overallRows}</div>
+        `;
+
+    return `
+      <div class="modal-backdrop" data-modal-backdrop>
+        <div class="modal-card modal-leaderboard" role="dialog">
+          <div class="modal-header">
+            <h2 class="modal-title">${tab === 'prestige100' ? ui.prestige100Race : ui.leaderboard}</h2>
+            <button class="modal-close" data-action="close-modal" type="button" aria-label="${ui.close}">×</button>
+          </div>
+          <div class="leaderboard-tabs">
+            <button class="leaderboard-tab ${tab === 'overall' ? 'active' : ''}" type="button"
+              data-action="leaderboard-tab" data-tab="overall">${ui.leaderboardTabOverall}</button>
+            <button class="leaderboard-tab ${tab === 'prestige100' ? 'active' : ''}" type="button"
+              data-action="leaderboard-tab" data-tab="prestige100">${ui.leaderboardTabPrestige100}</button>
+          </div>
+          ${offlineNote}
+          ${state.error ? `<p class="modal-error">${state.error}</p>` : ''}
+          ${listContent}
         </div>
       </div>
     `;
@@ -183,17 +235,33 @@ export function mountSocialLayer(
       getLocale(),
       profileManager.current,
       leaderboardClient.isOnline(),
+      localeManager.locale,
     );
   };
 
-  const openLeaderboard = async () => {
-    modalState = { ...modalState, view: 'leaderboard', loading: true, error: null };
-    render();
+  const loadLeaderboardData = async () => {
+    if (modalState.leaderboardTab === 'prestige100') {
+      const prestige100Entries = await leaderboardClient.fetchPrestige100Race(50);
+      modalState = { ...modalState, prestige100Entries, loading: false };
+      return;
+    }
     let entries = await leaderboardClient.fetchLeaderboard(50);
     if (entries.length === 0 && profileManager.hasUsername()) {
       entries = [{ rank: 1, profile: getSelfProfile() }];
     }
     modalState = { ...modalState, entries, loading: false };
+  };
+
+  const openLeaderboard = async () => {
+    modalState = {
+      ...modalState,
+      view: 'leaderboard',
+      leaderboardTab: 'overall',
+      loading: true,
+      error: null,
+    };
+    render();
+    await loadLeaderboardData();
     render();
   };
 
@@ -242,6 +310,14 @@ export function mountSocialLayer(
       case 'open-leaderboard':
         void openLeaderboard();
         break;
+      case 'leaderboard-tab': {
+        const tab = target.dataset.tab as LeaderboardTab;
+        if (tab !== 'overall' && tab !== 'prestige100') break;
+        modalState = { ...modalState, leaderboardTab: tab, loading: true, error: null };
+        render();
+        void loadLeaderboardData().then(render);
+        break;
+      }
       case 'open-profile':
         void openProfile(profileManager.current.id);
         break;

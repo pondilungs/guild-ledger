@@ -51,6 +51,14 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'GET' && url.pathname === '/leaderboard/prestige100') {
+      const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? 50)));
+      const racers = await store.getPrestige100Race(limit);
+      const entries = racers.map((entry, i) => ({ rank: i + 1, ...entry }));
+      send(res, 200, entries);
+      return;
+    }
+
     const profileMatch = url.pathname.match(/^\/profiles\/([^/]+)$/);
     if (profileMatch) {
       const id = decodeURIComponent(profileMatch[1]);

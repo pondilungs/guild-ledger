@@ -20,8 +20,12 @@ export interface PlayerProfile {
   username: string;
   createdAt: number;
   updatedAt: number;
+  /** Set once when lifetime prestige first reaches 100. */
+  prestige100At?: number;
   stats: PlayerStats;
 }
+
+export const PRESTIGE_100_GOAL = 100;
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -96,7 +100,16 @@ export class ProfileManager {
   }
 
   updateFromState(state: GameState, theme: ThemeConfig): void {
+    const prevLifetime = this.profile.stats.prestigePoints;
     this.profile.stats = buildStats(state, theme);
+    const nextLifetime = state.prestigeLifetime;
+    if (
+      !this.profile.prestige100At
+      && prevLifetime < PRESTIGE_100_GOAL
+      && nextLifetime >= PRESTIGE_100_GOAL
+    ) {
+      this.profile.prestige100At = Date.now();
+    }
     this.profile.updatedAt = Date.now();
     this.save();
   }

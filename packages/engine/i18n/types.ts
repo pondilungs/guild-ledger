@@ -72,6 +72,12 @@ export interface GameLocale {
     prestigeBalance: string;
     prestigeLifetime: string;
     buyWithPrestige: string;
+    leaderboardTabOverall: string;
+    leaderboardTabPrestige100: string;
+    prestige100Race: string;
+    prestige100RaceDesc: string;
+    prestige100ReachedAt: string;
+    prestige100Empty: string;
   };
   zones: Record<string, LocalizedEntity>;
   parties: Record<string, LocalizedEntity>;
