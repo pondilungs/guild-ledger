@@ -4,9 +4,11 @@ services:
     runtime: node
     plan: free
     rootDir: services/leaderboard-api
-    buildCommand: echo "no build"
+    buildCommand: npm install
     startCommand: node server.mjs
     healthCheckPath: /leaderboard?limit=1
     envVars:
       - key: NODE_ENV
         value: production
+      - key: MONGODB_DB_NAME
+        value: guild-ledger

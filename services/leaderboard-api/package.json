@@ -1,0 +1,9 @@
+{
+  "name": "guild-ledger-leaderboard-api",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "dependencies": {
+    "mongodb": "^6.12.0"
+  }
+}

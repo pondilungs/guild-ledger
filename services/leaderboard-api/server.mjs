@@ -1,10 +1,6 @@
 import http from 'node:http';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { createStore } from './db.mjs';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_FILE = path.join(__dirname, 'data', 'leaderboard.json');
 const PORT = Number(process.env.PORT ?? process.env.LEADERBOARD_PORT ?? 8787);
 
 const cors = {
@@ -13,36 +9,10 @@ const cors = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-function readDb() {
-  try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return { profiles: {} };
-  }
-}
-
-function writeDb(db) {
-  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2));
-}
-
 function send(res, status, body) {
   const payload = JSON.stringify(body);
   res.writeHead(status, { ...cors, 'Content-Type': 'application/json' });
   res.end(payload);
-}
-
-function compareProfiles(a, b) {
-  const sa = a.stats ?? {};
-  const sb = b.stats ?? {};
-  const prestigeA = sa.prestigeLifetime ?? sa.prestigePoints ?? 0;
-  const prestigeB = sb.prestigeLifetime ?? sb.prestigePoints ?? 0;
-  const prestigeDiff = prestigeB - prestigeA;
-  if (prestigeDiff !== 0) return prestigeDiff;
-  const countDiff = (sb.prestigeCount ?? 0) - (sa.prestigeCount ?? 0);
-  if (countDiff !== 0) return countDiff;
-  return (sb.totalGoldEarned ?? 0) - (sa.totalGoldEarned ?? 0);
 }
 
 function validateProfile(profile) {
@@ -52,45 +22,51 @@ function validateProfile(profile) {
   return true;
 }
 
-const server = http.createServer((req, res) => {
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => resolve(body));
+    req.on('error', reject);
+  });
+}
+
+const store = await createStore();
+
+const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, cors);
     res.end();
     return;
   }
 
-  const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
+  try {
+    const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
 
-  if (req.method === 'GET' && url.pathname === '/leaderboard') {
-    const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? 50)));
-    const db = readDb();
-    const sorted = Object.values(db.profiles)
-      .sort(compareProfiles)
-      .slice(0, limit)
-      .map((profile, i) => ({ rank: i + 1, profile }));
-    send(res, 200, sorted);
-    return;
-  }
-
-  const profileMatch = url.pathname.match(/^\/profiles\/([^/]+)$/);
-  if (profileMatch) {
-    const id = decodeURIComponent(profileMatch[1]);
-    const db = readDb();
-
-    if (req.method === 'GET') {
-      const profile = db.profiles[id];
-      if (!profile) {
-        send(res, 404, { error: 'not_found' });
-        return;
-      }
-      send(res, 200, profile);
+    if (req.method === 'GET' && url.pathname === '/leaderboard') {
+      const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? 50)));
+      const profiles = await store.getLeaderboard(limit);
+      const entries = profiles.map((profile, i) => ({ rank: i + 1, profile }));
+      send(res, 200, entries);
       return;
     }
 
-    if (req.method === 'PUT') {
-      let body = '';
-      req.on('data', (chunk) => { body += chunk; });
-      req.on('end', () => {
+    const profileMatch = url.pathname.match(/^\/profiles\/([^/]+)$/);
+    if (profileMatch) {
+      const id = decodeURIComponent(profileMatch[1]);
+
+      if (req.method === 'GET') {
+        const profile = await store.getProfile(id);
+        if (!profile) {
+          send(res, 404, { error: 'not_found' });
+          return;
+        }
+        send(res, 200, profile);
+        return;
+      }
+
+      if (req.method === 'PUT') {
+        const body = await readBody(req);
         try {
           const profile = JSON.parse(body);
           if (profile.id !== id) {
@@ -102,23 +78,36 @@ const server = http.createServer((req, res) => {
             return;
           }
           const now = Date.now();
-          const existing = db.profiles[id];
+          const existing = await store.getProfile(id);
           profile.createdAt = existing?.createdAt ?? profile.createdAt ?? now;
           profile.updatedAt = now;
-          db.profiles[id] = profile;
-          writeDb(db);
+          await store.upsertProfile(profile);
           send(res, 200, profile);
-        } catch {
+        } catch (err) {
+          if (err?.code === 11000) {
+            send(res, 409, { error: 'username_taken' });
+            return;
+          }
           send(res, 400, { error: 'bad_json' });
         }
-      });
-      return;
+        return;
+      }
     }
-  }
 
-  send(res, 404, { error: 'not_found' });
+    send(res, 404, { error: 'not_found' });
+  } catch (err) {
+    console.error('Leaderboard API error:', err);
+    send(res, 500, { error: 'server_error' });
+  }
 });
 
 server.listen(PORT, () => {
-  console.log(`Leaderboard API → http://localhost:${PORT}`);
+  console.log(`Leaderboard API → http://localhost:${PORT} (${store.mode})`);
 });
+
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, async () => {
+    await store.close();
+    process.exit(0);
+  });
+}

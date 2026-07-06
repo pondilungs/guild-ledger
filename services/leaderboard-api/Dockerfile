@@ -2,7 +2,10 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-COPY server.mjs ./
+COPY package.json package-lock.json* ./
+RUN npm install --omit=dev
+
+COPY server.mjs db.mjs ./
 COPY data/leaderboard.json ./data/leaderboard.json
 
 ENV NODE_ENV=production
