@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: guild-ledger-leaderboard
+    runtime: node
+    rootDir: services/leaderboard-api
+    buildCommand: echo "no build"
+    startCommand: node server.mjs
+    healthCheckPath: /leaderboard?limit=1
+    envVars:
+      - key: NODE_ENV
+        value: production
+    disk:
+      name: leaderboard-data
+      mountPath: /app/data
+      sizeGB: 1
