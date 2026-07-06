@@ -9,6 +9,26 @@ export function saveGame(state: GameState, themeId: string): void {
   localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
 }
 
+export function migrateState(state: GameState, theme: ThemeConfig): GameState {
+  const knownParties = new Set(state.parties.map((p) => p.id));
+  const parties = [...state.parties];
+  for (const def of theme.partySlots) {
+    if (!knownParties.has(def.id)) {
+      parties.push({ id: def.id, level: 0, active: false });
+    }
+  }
+
+  const knownUpgrades = new Set(state.upgrades.map((u) => u.id));
+  const upgrades = [...state.upgrades];
+  for (const def of theme.upgrades) {
+    if (!knownUpgrades.has(def.id)) {
+      upgrades.push({ id: def.id, level: 0 });
+    }
+  }
+
+  return { ...state, parties, upgrades };
+}
+
 export function loadGame(theme: ThemeConfig): GameState | null {
   const raw = localStorage.getItem(SAVE_KEY);
   if (!raw) return null;
@@ -17,7 +37,7 @@ export function loadGame(theme: ThemeConfig): GameState | null {
     if (parsed.themeId !== theme.id || parsed.state.version !== SAVE_VERSION) {
       return null;
     }
-    return parsed.state;
+    return migrateState(parsed.state, theme);
   } catch {
     return null;
   }

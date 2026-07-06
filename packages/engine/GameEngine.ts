@@ -214,6 +214,7 @@ export class GameEngine {
     const def = this.theme.upgrades.find((u) => u.id === upgradeId);
     const up = this.state.upgrades.find((u) => u.id === upgradeId);
     if (!def || !up || up.level >= def.maxLevel) return false;
+    if (def.unlockZone && !this.state.unlockedZones.includes(def.unlockZone)) return false;
     const cost = calcUpgradeCost(def, up.level);
     if (this.state.gold < cost) return false;
     this.state.gold -= cost;

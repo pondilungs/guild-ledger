@@ -107,8 +107,8 @@ export function renderModals(
               data-action="view-profile" data-profile-id="${entry.profile.id}">
               <span class="lb-rank">#${entry.rank}</span>
               <span class="lb-name">${entry.profile.username}</span>
-              <span class="lb-gold">${formatNumber(entry.profile.stats.totalGoldEarned)}</span>
               <span class="lb-prestige">${entry.profile.stats.prestigePoints}</span>
+              <span class="lb-gold">${formatNumber(entry.profile.stats.totalGoldEarned)}</span>
             </button>
           `;
         }).join('')
@@ -130,8 +130,8 @@ export function renderModals(
           <div class="leaderboard-head">
             <span>${ui.rank}</span>
             <span>${ui.player}</span>
-            <span>${ui.statTotalGold}</span>
             <span>${ui.prestige}</span>
+            <span>${ui.statTotalGold}</span>
           </div>
           <div class="leaderboard-list">${rows}</div>
         </div>

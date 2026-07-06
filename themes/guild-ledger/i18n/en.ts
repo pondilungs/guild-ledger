@@ -1,27 +1,124 @@
 import type { GameLocale } from '../../../packages/engine/i18n/types.ts';
 
+function pick<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
 const QUEST_COMPLETE = [
   'Quest report filed. Pockets feel heavier.',
   'Party returned. Deaths have been invoiced.',
   'Books closed. Profit recorded.',
   'Insurance company cried. We smiled.',
+  'Return approved. No bonus deductions.',
+  'Loot counted. Tax filing postponed.',
+  'Quest success. Death costs already written off.',
+  'Adventure over, receipt issued.',
+  'Party survived. Surprising, yet profitable.',
+  'Report filed. CFO signed off.',
+  'Damage claim denied. Standard procedure.',
+  'Enemies dead, invoices paid. Balanced books.',
+  'Margin acceptable. No champagne budget.',
+  'Revenue collected. Morale is not a line item.',
+  'Quest closed. Commission stayed in-house.',
 ];
 
 const QUEST_DEATH = [
   'A tenant died. Must re-hire.',
   'Party member fell. Logged as an expense.',
   'Adventurer billed. Permanently.',
+  'Final paycheck deducted from ledger.',
+  'Insurance claim denied. Expected expense.',
+  'Tenant contract terminated. Permanently.',
+  'Added to replacement roster.',
+  'Death benefit unpaid. We kept it too.',
+  'Funeral cost offset against rent.',
+  'Safety report: negligible concern.',
+  'Obituary not sent to the client.',
+  'Re-hire budget allocated. You\'re welcome.',
+  'Personnel exit processed. HR file closed.',
+  'Missing asset logged. No reimbursement.',
 ];
 
 const HIRE = [
   'New tenant signed. Deposit collected.',
   'Contract renewed. Level up.',
   'Party expanded. More risk, more rent.',
+  'Rent increase notice sent. No objections.',
+  'Added to payroll. Costs rose accordingly.',
+  'No probation. Straight to the battlefield.',
+  'Onboarding form signed. Upfront fee collected.',
+  'Unit strengthened. Insurance premium up too.',
+  'New contract: low wage, high risk.',
+  'Tenant roster updated. Deposit in our pocket.',
+  'Level-up approved. Depreciation continues.',
+  'Headcount increased. Productivity report pending.',
 ];
 
 const ZONE_UNLOCK = [
   'New zone unlocked. Rent rates updated.',
   'Portfolio grew. We are tax liable now.',
+  'Deed transferred. Death capacity increased.',
+  'New sector, new tax bracket.',
+  'Zone ownership transferred. Notary fee paid.',
+  'Market analysis: more deaths, more income.',
+  'Map expanded. Rent index recalculated.',
+  'Investment approved. Adventurer demand rising.',
+  'Franchise deal signed. Commission internal.',
+  'Zone license renewed. Operating area widened.',
+];
+
+const QUEST_START = [
+  (zone: string, n: number) => `${n} parties sent to ${zone}. Awaiting report...`,
+  (zone: string, n: number) => `${n} tenants on assignment in ${zone}. Collection delayed.`,
+  (zone: string, n: number) => `${zone}: ${n} parties deployed. Receipt pending.`,
+  (zone: string, n: number) => `Shipment complete. ${n} parties routed to ${zone}.`,
+  (zone: string, n: number) => `${n} contractors in ${zone}. Return uncertain.`,
+  (zone: string, n: number) => `${zone} operation live. ${n} tenants in the field.`,
+  (zone: string, n: number) => `Work order issued: ${n} parties → ${zone}.`,
+  (zone: string, n: number) => `${n} units stationed in ${zone}. Damage estimate: low.`,
+];
+
+const UPGRADE = [
+  (name: string, level: number) => `${name} → Level ${level}. Investment will pay off.`,
+  (name: string, level: number) => `${name} Lv${level}. Longer depreciation, bigger profit.`,
+  (name: string, level: number) => `${name} upgraded (Lv.${level}). Accounting approved.`,
+  (name: string, level: number) => `${name} capacity raised. Level ${level} invoiced.`,
+  (name: string, level: number) => `${name} → ${level}. ROI spreadsheet updated.`,
+  (name: string, level: number) => `${name} investment Lv.${level}. Tax advisor pleased.`,
+  (name: string, level: number) => `${name} expanded. Level ${level} — asset, not expense.`,
+];
+
+const OFFLINE = [
+  (gold: number, hours: number) =>
+    `Night shift report: +${Math.floor(gold)} gold (${hours.toFixed(1)}h offline).`,
+  (gold: number, hours: number) =>
+    `Morning cash count: +${Math.floor(gold)} gold (${hours.toFixed(1)}h offline). Worked through the night.`,
+  (gold: number, hours: number) =>
+    `Desk duty summary: +${Math.floor(gold)} gold / ${hours.toFixed(1)}h.`,
+  (gold: number, hours: number) =>
+    `Auto-collection done: +${Math.floor(gold)} gold (${hours.toFixed(1)}h). Ledger ran while you slept.`,
+  (gold: number, hours: number) =>
+    `Passive income report: +${Math.floor(gold)} gold (${hours.toFixed(1)}h). Manager was away.`,
+  (gold: number, hours: number) =>
+    `Night books closed: +${Math.floor(gold)} gold (${hours.toFixed(1)}h). No overtime pay.`,
+];
+
+const PRESTIGE = [
+  (points: number) => `Guild restructured. +${points} Reputation recorded.`,
+  (points: number) => `Corporate reset complete. +${points} Reputation amortized.`,
+  (points: number) => `Rebrand finished. +${points} Reputation logged.`,
+  (points: number) => `Strategic wipe approved. +${points} Reputation permanent bonus.`,
+  (points: number) => `Franchise renewed. +${points} Reputation, old records purged.`,
+  (points: number) => `Balance sheet refreshed. +${points} Reputation. New fiscal year.`,
+];
+
+const CLICK_BOOST = [
+  (mult: number, dur: number) => `Emergency collection! ${mult}× income for ${dur}s.`,
+  (mult: number, dur: number) => `Crisis mode: ${mult}× income ${dur}s. Books stay open.`,
+  (mult: number, dur: number) => `Rapid collection live: ${mult}× / ${dur}s.`,
+  (mult: number, dur: number) => `Before the tax office arrives: ${mult}× income, ${dur}s.`,
+  (mult: number, dur: number) => `Cash register accelerated. ${mult}× income for ${dur}s.`,
+  (mult: number, dur: number) => `Bonus period open: ${mult}× income (${dur}s).`,
 ];
 
 export const en: GameLocale = {
@@ -38,6 +135,8 @@ export const en: GameLocale = {
     ledger: 'Ledger Log',
     ledgerEmpty: 'No entries yet.',
     parties: 'Parties (Tenants)',
+    partiesScrollHint: '↓ Scroll for more tenants',
+    investmentsScrollHint: '↓ Scroll for all investments',
     investments: 'Guild Investments',
     total: 'Total',
     prestige: 'Prestige',
@@ -82,12 +181,15 @@ export const en: GameLocale = {
     createUsernameHint: 'Pick a username to appear on the leaderboard. Letters, numbers, and underscores only.',
     usernameInvalid: 'Invalid username (3-16 chars, a-z, 0-9, _)',
     profileNotFound: 'Profile not found.',
+    updateBanner: 'v0.3.0 — Infernal Ledger & Celestial Audit are live! Scroll the party list for new tenants and Tax Evasion.',
   },
   zones: {
     rat_cellar: { name: 'Rat Cellar', description: 'Cheap deaths for fresh adventurers.' },
     goblin_mine: { name: 'Goblin Mine', description: 'Goblins bill you as enemies and tenants.' },
     haunted_crypt: { name: 'Haunted Crypt', description: 'Death insurance not valid here.' },
     dragon_vault: { name: 'Dragon Vault', description: 'High risk, high rent.' },
+    infernal_ledger: { name: 'Infernal Ledger', description: 'Demonic interest rates. Deaths count as tax deductions.' },
+    celestial_audit: { name: 'Celestial Audit', description: 'Even gods demand receipts. The final profit gate.' },
   },
   parties: {
     squire: { name: 'Squire', description: 'Cheap, replaceable, tax-free.' },
@@ -95,6 +197,8 @@ export const en: GameLocale = {
     rogue: { name: 'Rogue', description: 'Loot bonus. Insurance fraud expert.' },
     knight: { name: 'Knight', description: 'Tank. Pays rent late, but pays.' },
     mage: { name: 'Mage', description: 'AoE billing specialist.' },
+    warlock: { name: 'Warlock', description: 'Dark contracts. High DPS, high lawsuit risk.' },
+    auditor: { name: 'Chief Auditor', description: 'Invoices every hit. Endgame’s final tenant.' },
   },
   upgrades: {
     rent_hike: { name: 'Rent Hike', description: '+15% gold income' },
@@ -102,32 +206,22 @@ export const en: GameLocale = {
     desk_efficiency: { name: 'Desk Efficiency', description: '+10% DPS' },
     night_shift: { name: 'Night Shift', description: '+20% offline earnings' },
     guild_reputation: { name: 'Guild Reputation', description: '+5% prestige points' },
+    tax_evasion: { name: 'Tax Evasion', description: '+12% gold income (late game)' },
   },
   flavor: {
     questCompleteMsg: (gold, deaths, zoneName) => {
-      const base = QUEST_COMPLETE[Math.floor(Math.random() * QUEST_COMPLETE.length)];
+      const base = pick(QUEST_COMPLETE);
       const deathPart = deaths > 0 ? `, ${deaths} deaths` : ', zero losses';
       return `${zoneName}: ${base} (+${Math.floor(gold)} gold${deathPart})`;
     },
-    questDeathMsg: (partyName) => {
-      const base = QUEST_DEATH[Math.floor(Math.random() * QUEST_DEATH.length)];
-      return `${partyName} — ${base}`;
-    },
-    hireMsg: (partyName, level) => {
-      const base = HIRE[Math.floor(Math.random() * HIRE.length)];
-      return `${partyName} Lv${level}. ${base}`;
-    },
-    zoneUnlockMsg: (zoneName) => {
-      const base = ZONE_UNLOCK[Math.floor(Math.random() * ZONE_UNLOCK.length)];
-      return `${zoneName} — ${base}`;
-    },
-    questStartMsg: (zoneName, partyCount) =>
-      `${partyCount} parties sent to ${zoneName}. Awaiting report...`,
-    upgradeMsg: (name, level) => `${name} → Level ${level}. Investment will pay off.`,
-    offlineMsg: (gold, hours) =>
-      `Night shift report: +${Math.floor(gold)} gold (${hours.toFixed(1)}h offline).`,
-    prestigeMsg: (points) => `Guild restructured. +${points} Reputation recorded.`,
-    clickBoostMsg: (mult, dur) => `Emergency collection! ${mult}× income for ${dur}s.`,
+    questDeathMsg: (partyName) => `${partyName} — ${pick(QUEST_DEATH)}`,
+    hireMsg: (partyName, level) => `${partyName} Lv${level}. ${pick(HIRE)}`,
+    zoneUnlockMsg: (zoneName) => `${zoneName} — ${pick(ZONE_UNLOCK)}`,
+    questStartMsg: (zoneName, partyCount) => pick(QUEST_START)(zoneName, partyCount),
+    upgradeMsg: (name, level) => pick(UPGRADE)(name, level),
+    offlineMsg: (gold, hours) => pick(OFFLINE)(gold, hours),
+    prestigeMsg: (points) => pick(PRESTIGE)(points),
+    clickBoostMsg: (mult, dur) => pick(CLICK_BOOST)(mult, dur),
   },
   tutorial: [
     {

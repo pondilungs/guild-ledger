@@ -10,4 +10,5 @@ export { LocaleManager, detectLocale, type LocaleId } from './core/LocaleManager
 export type { GameLocale, LocalizedEntity } from './i18n/types.ts';
 export { ProfileManager, buildStats, type PlayerProfile, type PlayerStats } from './core/ProfileManager.ts';
 export { AutoSaveManager } from './core/AutoSaveManager.ts';
+export { shouldShowUpdateBanner, dismissUpdateBanner } from './core/UpdateBanner.ts';
 export { LeaderboardClient, resolveLeaderboardUrl, type LeaderboardEntry } from './services/LeaderboardClient.ts';

@@ -11,6 +11,7 @@ import type { GameLocale } from '../i18n/types.ts';
 import type { GameState } from '../core/types.ts';
 import type { ThemeConfig } from '../config/ThemeSchema.ts';
 import type { ClickBoostStatus } from '../systems/ClickBoostSystem.ts';
+import { shouldShowUpdateBanner, dismissUpdateBanner } from '../core/UpdateBanner.ts';
 
 export interface GameUIOptions {
   localeManager: LocaleManager;
@@ -32,6 +33,14 @@ interface RenderContext {
   currentLocale: LocaleId;
   tutorial: TutorialManager;
   displayUsername: string;
+  showUpdateBanner: boolean;
+}
+
+function isUpgradeUnlocked(
+  def: ThemeConfig['upgrades'][0],
+  state: GameState,
+): boolean {
+  return !def.unlockZone || state.unlockedZones.includes(def.unlockZone);
 }
 
 function affordHintText(
@@ -77,11 +86,13 @@ function computeStructureKey(ctx: RenderContext): string {
     state.parties.some((p) => p.level > 0) ? 1 : 0,
     theme.partySlots.map((def) => (state.unlockedZones.includes(def.unlockZone) ? 1 : 0)).join(''),
     theme.zones.map((z) => (state.unlockedZones.includes(z.id) ? 1 : 0)).join(''),
+    ctx.showUpdateBanner ? 1 : 0,
+    theme.upgrades.map((def) => (isUpgradeUnlocked(def, state) ? 1 : 0)).join(''),
   ].join('|');
 }
 
 function buildHTML(ctx: RenderContext): string {
-  const { engine, state, theme, locale, ui, baseGps, gps, clickStatus, onQuest, nextBuyId, currentLocale, tutorial } = ctx;
+  const { engine, state, theme, locale, ui, baseGps, gps, clickStatus, onQuest, nextBuyId, currentLocale, tutorial, showUpdateBanner } = ctx;
   const prestigePts = calcPrestigePoints(state, theme);
   const quest = state.activeQuest;
   const zone = theme.zones.find((z) => z.id === state.currentZoneId)!;
@@ -99,55 +110,63 @@ function buildHTML(ctx: RenderContext): string {
             <p class="tagline">${locale.tagline}</p>
           </div>
         </div>
-        <div class="header-actions">
-          <div class="header-top-row">
-            <div class="lang-switcher" aria-label="${ui.langLabel}">
-              <button class="lang-btn ${currentLocale === 'tr' ? 'active' : ''}" data-action="set-locale" data-locale="tr" type="button">TR</button>
-              <button class="lang-btn ${currentLocale === 'en' ? 'active' : ''}" data-action="set-locale" data-locale="en" type="button">EN</button>
-            </div>
-            <div class="social-bar">
-              <button class="btn btn-sm btn-social" data-action="open-leaderboard" type="button">🏆 ${ui.leaderboard}</button>
-              <button class="btn btn-sm btn-social profile-chip" data-action="open-profile" type="button" data-bind="username">👤 ${ctx.displayUsername}</button>
-            </div>
+        <div class="resources" data-tutorial-target="resources">
+          <div class="resource gold">
+            <span>🪙</span>
+            <span class="resource-value" data-bind="gold">${formatNumber(state.gold)}</span>
+            <span class="resource-rate ${clickStatus.active ? 'boosted' : ''}" data-bind="gps">+${formatNumber(gps)}/s${clickStatus.active ? ` (${clickStatus.multiplier}×)` : ''}</span>
           </div>
-          <div class="resources" data-tutorial-target="resources">
-            <div class="resource gold">
-              <span>🪙</span>
-              <span class="resource-value" data-bind="gold">${formatNumber(state.gold)}</span>
-              <span class="resource-rate ${clickStatus.active ? 'boosted' : ''}" data-bind="gps">+${formatNumber(gps)}/s${clickStatus.active ? ` (${clickStatus.multiplier}×)` : ''}</span>
+          ${baseGps > 0 ? `
+            <button
+              class="click-boost-btn ${clickStatus.active ? 'active' : ''} ${clickStatus.cooldownLeft > 0 && !clickStatus.active ? 'cooldown' : ''}"
+              data-action="click-boost"
+              type="button"
+              title="${ui.collectBoost.replace('{mult}', String(clickConfig.multiplier))}"
+            >
+              <span class="click-boost-icon">💰</span>
+              <span class="click-boost-label" data-bind="click-boost-label">
+                ${clickStatus.active
+                  ? `${clickStatus.multiplier}× ${formatTime(clickStatus.boostLeft)}`
+                  : clickStatus.cooldownLeft > 0
+                    ? formatTime(clickStatus.cooldownLeft)
+                    : ui.collect}
+              </span>
+            </button>
+          ` : ''}
+          ${state.prestigePoints > 0 ? `
+            <div class="resource prestige">
+              <span>${theme.prestige.currencyIcon}</span>
+              <span class="resource-value">${state.prestigePoints}</span>
+              <span class="resource-label">${locale.prestigeCurrency}</span>
             </div>
-            ${baseGps > 0 ? `
-              <button
-                class="click-boost-btn ${clickStatus.active ? 'active' : ''} ${clickStatus.cooldownLeft > 0 && !clickStatus.active ? 'cooldown' : ''}"
-                data-action="click-boost"
-                type="button"
-                title="${ui.collectBoost.replace('{mult}', String(clickConfig.multiplier))}"
-              >
-                <span class="click-boost-icon">💰</span>
-                <span class="click-boost-label" data-bind="click-boost-label">
-                  ${clickStatus.active
-                    ? `${clickStatus.multiplier}× ${formatTime(clickStatus.boostLeft)}`
-                    : clickStatus.cooldownLeft > 0
-                      ? formatTime(clickStatus.cooldownLeft)
-                      : ui.collect}
-                </span>
-              </button>
-            ` : ''}
-            ${state.prestigePoints > 0 ? `
-              <div class="resource prestige">
-                <span>${theme.prestige.currencyIcon}</span>
-                <span class="resource-value">${state.prestigePoints}</span>
-                <span class="resource-label">${locale.prestigeCurrency}</span>
-              </div>
-            ` : ''}
+          ` : ''}
+        </div>
+        <div class="header-actions">
+          <div class="lang-switcher" aria-label="${ui.langLabel}">
+            <button class="lang-btn ${currentLocale === 'tr' ? 'active' : ''}" data-action="set-locale" data-locale="tr" type="button">TR</button>
+            <button class="lang-btn ${currentLocale === 'en' ? 'active' : ''}" data-action="set-locale" data-locale="en" type="button">EN</button>
+          </div>
+          <div class="social-bar">
+            <button class="btn btn-sm btn-social" data-action="open-leaderboard" type="button">🏆 ${ui.leaderboard}</button>
+            <button class="btn btn-sm btn-social profile-chip" data-action="open-profile" type="button" data-bind="username">👤 ${ctx.displayUsername}</button>
           </div>
         </div>
       </header>
 
-      ${engine.offlineEarnings ? `
-        <div class="offline-banner">
-          <p>${ui.offlineEarnings}: <strong>+${formatNumber(engine.offlineEarnings.gold)}</strong> (${formatTime(engine.offlineEarnings.seconds)})</p>
-          <button class="btn btn-primary" data-action="collect-offline">${ui.collect}</button>
+      ${engine.offlineEarnings || showUpdateBanner ? `
+        <div class="banner-stack">
+          ${engine.offlineEarnings ? `
+            <div class="offline-banner">
+              <p>${ui.offlineEarnings}: <strong>+${formatNumber(engine.offlineEarnings.gold)}</strong> (${formatTime(engine.offlineEarnings.seconds)})</p>
+              <button class="btn btn-primary" data-action="collect-offline">${ui.collect}</button>
+            </div>
+          ` : ''}
+          ${showUpdateBanner ? `
+            <div class="update-banner">
+              <p class="update-banner-text">🎉 ${ui.updateBanner}</p>
+              <button class="btn btn-sm update-banner-dismiss" data-action="dismiss-banner" type="button">${ui.close}</button>
+            </div>
+          ` : ''}
         </div>
       ` : ''}
 
@@ -219,8 +238,11 @@ function buildHTML(ctx: RenderContext): string {
         </section>
 
         <section class="panel party-panel">
-          <h2>👥 ${ui.parties}</h2>
-          <div class="item-list">
+          <div class="panel-title-row">
+            <h2>👥 ${ui.parties}</h2>
+            <span class="scroll-hint">${ui.partiesScrollHint}</span>
+          </div>
+          <div class="item-list party-list" data-scroll-panel="parties">
             ${theme.partySlots.map((def) => {
               const pLoc = locale.parties[def.id];
               const party = state.parties.find((p) => p.id === def.id)!;
@@ -257,9 +279,13 @@ function buildHTML(ctx: RenderContext): string {
         </section>
 
         <section class="panel upgrade-panel">
-          <h2>📈 ${ui.investments}</h2>
-          <div class="item-list">
+          <div class="panel-title-row">
+            <h2>📈 ${ui.investments}</h2>
+            <span class="scroll-hint">${ui.investmentsScrollHint}</span>
+          </div>
+          <div class="item-list upgrade-list">
             ${theme.upgrades.map((def) => {
+              if (!isUpgradeUnlocked(def, state)) return '';
               const uLoc = locale.upgrades[def.id];
               const up = state.upgrades.find((u) => u.id === def.id)!;
               const maxed = up.level >= def.maxLevel;
@@ -323,7 +349,7 @@ function setText(el: Element | null, text: string): void {
 }
 
 function patchDynamic(root: HTMLElement, ctx: RenderContext): void {
-  const { state, theme, ui, baseGps, gps, clickStatus, onQuest, nextBuyId, tutorial } = ctx;
+  const { state, theme, ui, baseGps, gps, clickStatus, onQuest, nextBuyId } = ctx;
 
   setText(root.querySelector('[data-bind="username"]'), `👤 ${ctx.displayUsername}`);
 
@@ -397,6 +423,7 @@ function patchDynamic(root: HTMLElement, ctx: RenderContext): void {
   }
 
   for (const def of theme.upgrades) {
+    if (!isUpgradeUnlocked(def, state)) continue;
     const up = state.upgrades.find((u) => u.id === def.id)!;
     if (up.level >= def.maxLevel) continue;
     const cost = calcUpgradeCost(def, up.level);
@@ -428,7 +455,30 @@ function patchDynamic(root: HTMLElement, ctx: RenderContext): void {
     );
   }
 
-  applyTutorialHighlight(root, tutorial.current?.target);
+}
+
+function scrollPartyListIfNeeded(root: HTMLElement, lastTarget: { id: string }): void {
+  const list = root.querySelector<HTMLElement>('[data-scroll-panel="parties"]');
+  if (!list) return;
+
+  const target =
+    root.querySelector<HTMLElement>('.party-panel [data-party-card].next-buy')
+    ?? root.querySelector<HTMLElement>('.party-panel [data-party-card]:not(.locked)');
+  if (!target) return;
+
+  const targetId = target.getAttribute('data-party-card') ?? '';
+  const listOverflows = list.scrollHeight > list.clientHeight + 4;
+  list.classList.toggle('has-overflow', listOverflows);
+
+  if (!listOverflows) return;
+  if (targetId === lastTarget.id) return;
+  lastTarget.id = targetId;
+
+  const listRect = list.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+  if (targetRect.bottom > listRect.bottom - 8 || targetRect.top < listRect.top + 8) {
+    target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
 }
 
 function collectPurchaseOptions(ctx: RenderContext): PurchaseOption[] {
@@ -448,6 +498,7 @@ function collectPurchaseOptions(ctx: RenderContext): PurchaseOption[] {
     });
   }
   for (const def of theme.upgrades) {
+    if (!isUpgradeUnlocked(def, state)) continue;
     const up = state.upgrades.find((u) => u.id === def.id)!;
     if (up.level >= def.maxLevel) continue;
     const cost = calcUpgradeCost(def, up.level);
@@ -489,6 +540,7 @@ function buildContext(
     currentLocale: localeManager.locale,
     tutorial,
     displayUsername: '',
+    showUpdateBanner: false,
   });
 
   return {
@@ -505,6 +557,7 @@ function buildContext(
     currentLocale: localeManager.locale,
     tutorial,
     displayUsername: getDisplayUsername(),
+    showUpdateBanner: shouldShowUpdateBanner(theme.version),
   };
 }
 
@@ -519,6 +572,7 @@ export function mountGameUI(
   let wasOnQuest = false;
   let structureKey = '';
   let renderScheduled = false;
+  const lastPartyScrollTarget = { id: '' };
 
   root.addEventListener('click', (e) => {
     const target = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
@@ -542,6 +596,10 @@ export function mountGameUI(
         break;
       case 'collect-offline':
         engine.collectOffline();
+        break;
+      case 'dismiss-banner':
+        if (engine.theme.version) dismissUpdateBanner(engine.theme.version);
+        scheduleRender();
         break;
       case 'start-quest':
         if (engine.startQuest()) tutorial.notify('start_quest');
@@ -582,11 +640,14 @@ export function mountGameUI(
 
     const key = computeStructureKey(ctx);
     if (key !== structureKey || !root.querySelector('[data-game-shell]')) {
+      if (key !== structureKey) lastPartyScrollTarget.id = '';
       structureKey = key;
       root.innerHTML = buildHTML(ctx);
     } else {
       patchDynamic(root, ctx);
     }
+    applyTutorialHighlight(root, tutorial.current?.target);
+    scrollPartyListIfNeeded(root, lastPartyScrollTarget);
   };
 
   const scheduleRender = () => {

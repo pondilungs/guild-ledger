@@ -37,6 +37,7 @@ export interface UpgradeDef {
   maxLevel: number;
   effectPerLevel: number;
   effectType: 'gold_mult' | 'dps_mult' | 'death_reduce' | 'offline_mult' | 'prestige_mult';
+  unlockZone?: string;
 }
 
 export interface PrestigeDef {

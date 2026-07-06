@@ -20,6 +20,8 @@ export interface GameLocale {
     ledger: string;
     ledgerEmpty: string;
     parties: string;
+    partiesScrollHint: string;
+    investmentsScrollHint: string;
     investments: string;
     total: string;
     prestige: string;
@@ -64,6 +66,7 @@ export interface GameLocale {
     createUsernameHint: string;
     usernameInvalid: string;
     profileNotFound: string;
+    updateBanner: string;
   };
   zones: Record<string, LocalizedEntity>;
   parties: Record<string, LocalizedEntity>;

@@ -33,9 +33,14 @@ function send(res, status, body) {
   res.end(payload);
 }
 
-function score(profile) {
-  const s = profile.stats ?? {};
-  return (s.totalGoldEarned ?? 0) * 1_000_000 + (s.prestigePoints ?? 0) * 1_000 + (s.prestigeCount ?? 0);
+function compareProfiles(a, b) {
+  const sa = a.stats ?? {};
+  const sb = b.stats ?? {};
+  const prestigeDiff = (sb.prestigePoints ?? 0) - (sa.prestigePoints ?? 0);
+  if (prestigeDiff !== 0) return prestigeDiff;
+  const countDiff = (sb.prestigeCount ?? 0) - (sa.prestigeCount ?? 0);
+  if (countDiff !== 0) return countDiff;
+  return (sb.totalGoldEarned ?? 0) - (sa.totalGoldEarned ?? 0);
 }
 
 function validateProfile(profile) {
@@ -58,7 +63,7 @@ const server = http.createServer((req, res) => {
     const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? 50)));
     const db = readDb();
     const sorted = Object.values(db.profiles)
-      .sort((a, b) => score(b) - score(a))
+      .sort(compareProfiles)
       .slice(0, limit)
       .map((profile, i) => ({ rank: i + 1, profile }));
     send(res, 200, sorted);
