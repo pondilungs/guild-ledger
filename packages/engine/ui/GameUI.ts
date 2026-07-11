@@ -19,6 +19,7 @@ import type { GameState } from '../core/types.ts';
 import type { ThemeConfig } from '../config/ThemeSchema.ts';
 import type { ClickBoostStatus } from '../systems/ClickBoostSystem.ts';
 import { shouldShowPatchNotes, dismissPatchNotes } from '../core/PatchNotes.ts';
+import { renderSeal, ensureSealSprite } from './icons.ts';
 
 export interface GameUIOptions {
   localeManager: LocaleManager;
@@ -41,6 +42,13 @@ interface RenderContext {
   tutorial: TutorialManager;
   displayUsername: string;
   showPatchNotes: boolean;
+}
+
+function renderBrandTitle(title: string): string {
+  const words = title.split(' ');
+  if (words.length < 2) return title;
+  const last = words.pop();
+  return `${words.join(' ')} <span class="brand-accent">${last}</span>`;
 }
 
 function isUpgradeUnlocked(
@@ -105,16 +113,19 @@ function buildPrestigeShopHTML(ctx: RenderContext): string {
   const items = theme.prestigeShop ?? [];
   if (items.length === 0) return '';
 
-  const cards = items.map((def) => {
+  const cards = items.map((def, i) => {
     const loc = locale.prestigeShop[def.id];
     const level = getShopLevel(state, def.id);
     const maxed = level >= def.maxLevel;
     const cost = calcShopCost(def, level);
     const canBuy = canBuyShopItem(state, theme, def.id);
+    const reqNumber = `REQ-${String(i + 1).padStart(2, '0')}`;
     return `
       <div class="item-card shop-item-card ${maxed ? 'maxed-card' : ''}" data-shop-card="${def.id}">
+        <span class="shop-req-number">${reqNumber}</span>
+        ${maxed ? '<span class="shop-approved-stamp">APPROVED</span>' : ''}
         <div class="item-header">
-          <span class="item-icon">${def.icon}</span>
+          <span class="item-icon">${renderSeal(def.icon)}</span>
           <div>
             <strong>${loc?.name ?? def.name}</strong>
             <span class="item-level">${level}/${def.maxLevel}</span>
@@ -122,12 +133,12 @@ function buildPrestigeShopHTML(ctx: RenderContext): string {
         </div>
         <p class="item-desc">${loc?.description ?? def.description}</p>
         ${maxed
-          ? '<span class="badge maxed">MAX</span>'
+          ? ''
           : `<div class="buy-row">
               <button class="btn btn-sm ${canBuy ? 'btn-ready' : 'disabled'}"
                 data-action="buy-prestige-shop" data-shop-item="${def.id}"
                 ${canBuy ? '' : 'disabled'}>
-                ${ui.buyWithPrestige} (${cost} 📜)
+                ${ui.buyWithPrestige} (${cost} ${renderSeal('rank', 'seal-inline')})
               </button>
             </div>`
         }
@@ -144,7 +155,7 @@ function buildPrestigeShopHTML(ctx: RenderContext): string {
         </div>
         <p class="modal-desc">${ui.prestigeShopDesc}</p>
         <div class="prestige-shop-balance">
-          <span>${ui.prestigeBalance}: <strong data-bind="shop-balance">${state.prestigePoints}</strong> 📜</span>
+          <span>${ui.prestigeBalance}: <strong data-bind="shop-balance">${state.prestigePoints}</strong> ${renderSeal('rank', 'seal-inline')}</span>
           <span>${ui.prestigeLifetime}: <strong data-bind="shop-lifetime">${state.prestigeLifetime}</strong></span>
         </div>
         <div class="prestige-shop-list">${cards}</div>
@@ -177,14 +188,13 @@ function patchPrestigeShop(root: HTMLElement, ctx: RenderContext): void {
 
     if (maxed) {
       card.classList.add('maxed-card');
-      if (!card.querySelector('.badge.maxed')) {
+      if (!card.querySelector('.shop-approved-stamp')) {
         const buyRow = card.querySelector('.buy-row');
-        if (buyRow) {
-          const badge = document.createElement('span');
-          badge.className = 'badge maxed';
-          badge.textContent = 'MAX';
-          buyRow.replaceWith(badge);
-        }
+        const stamp = document.createElement('span');
+        stamp.className = 'shop-approved-stamp';
+        stamp.textContent = 'APPROVED';
+        if (buyRow) buyRow.replaceWith(stamp);
+        else card.appendChild(stamp);
       }
       continue;
     }
@@ -199,8 +209,8 @@ function patchPrestigeShop(root: HTMLElement, ctx: RenderContext): void {
     btn.classList.toggle('btn-ready', ready);
     btn.classList.toggle('disabled', !ready);
 
-    const label = `${ui.buyWithPrestige} (${cost} 📜)`;
-    if (btn.textContent !== label) btn.textContent = label;
+    const label = `${ui.buyWithPrestige} (${cost} ${renderSeal('rank', 'seal-inline')})`;
+    if (btn.innerHTML !== label) btn.innerHTML = label;
   }
 }
 
@@ -225,7 +235,7 @@ function buildLootPairCard(
   const count = getLootCount(state, loot.id);
   const canCraft = canCraftLootItem(state, theme, craft.id);
   const progress = Math.min(100, Math.round((count / craft.shardCost) * 100));
-  const zoneLabel = `${zoneDef?.icon ?? '📍'} ${zoneLoc?.name ?? loot.zoneId}`;
+  const zoneLabel = `${renderSeal(zoneDef?.icon ?? 'coin', 'row-seal')} ${zoneLoc?.name ?? loot.zoneId}`;
   const lootName = lootLoc?.name ?? loot.name;
   const craftName = craftLoc?.name ?? craft.name;
   const craftHint = craftLoc?.description ?? craft.description;
@@ -235,7 +245,7 @@ function buildLootPairCard(
       <div class="loot-card is-locked" data-loot-pair="${craft.id}" data-loot-id="${loot.id}">
         <div class="loot-card-locked-row">
           <span class="loot-card-zone">${zoneLabel}</span>
-          <span class="loot-card-locked-gear">${craft.icon} ${craftName}</span>
+          <span class="loot-card-locked-gear">${renderSeal(craft.icon, 'row-seal')} ${craftName}</span>
           <span class="loot-card-lock-tag">${ui.lootZoneLocked}</span>
         </div>
       </div>
@@ -248,7 +258,7 @@ function buildLootPairCard(
         data-action="craft-zone-loot" data-loot-craft="${craft.id}"
         ${canCraft ? '' : 'disabled'}>
         <span>${ui.craftWithLoot}</span>
-        <span class="loot-card-cost">${craft.shardCost} ${loot.icon}</span>
+        <span class="loot-card-cost">${craft.shardCost} ${renderSeal(loot.icon, 'seal-inline')}</span>
       </button>`;
 
   return `
@@ -260,7 +270,7 @@ function buildLootPairCard(
       </div>
       <div class="loot-card-flow">
         <div class="loot-card-tile is-shard">
-          <span class="loot-card-emoji">${loot.icon}</span>
+          <span class="loot-card-emoji">${renderSeal(loot.icon)}</span>
           <div class="loot-card-tile-meta">
             <span class="loot-card-tile-label">${ui.lootDropsIn}</span>
             <span class="loot-card-tile-name">${lootName}</span>
@@ -268,7 +278,7 @@ function buildLootPairCard(
         </div>
         <span class="loot-card-arrow" aria-hidden="true">→</span>
         <div class="loot-card-tile is-gear">
-          <span class="loot-card-emoji">${craft.icon}</span>
+          <span class="loot-card-emoji">${renderSeal(craft.icon)}</span>
           <div class="loot-card-tile-meta">
             <span class="loot-card-tile-label">${ui.lootCraftsInto}</span>
             <span class="loot-card-tile-name">${craftName}</span>
@@ -489,15 +499,14 @@ function buildHTML(ctx: RenderContext): string {
     <div data-game-shell>
       <header class="header">
         <div class="brand">
-          <span class="brand-icon">📒</span>
           <div>
-            <h1>${theme.title}</h1>
+            <h1>${renderBrandTitle(theme.title)}</h1>
             <p class="tagline">${locale.tagline}</p>
           </div>
         </div>
         <div class="resources" data-tutorial-target="resources">
           <div class="resource gold">
-            <span>🪙</span>
+            <span class="row-seal">${renderSeal('coin')}</span>
             <span class="resource-value" data-bind="gold">${formatNumber(state.gold)}</span>
             <span class="resource-rate ${clickStatus.active ? 'boosted' : ''}" data-bind="gps">+${formatNumber(gps)}/s${clickStatus.active ? ` (${clickStatus.multiplier}×)` : ''}</span>
           </div>
@@ -508,7 +517,6 @@ function buildHTML(ctx: RenderContext): string {
               type="button"
               title="${ui.collectBoost.replace('{mult}', String(clickConfig.multiplier))}"
             >
-              <span class="click-boost-icon">💰</span>
               <span class="click-boost-label" data-bind="click-boost-label">
                 ${clickStatus.active
                   ? `${clickStatus.multiplier}× ${formatTime(clickStatus.boostLeft)}`
@@ -520,7 +528,7 @@ function buildHTML(ctx: RenderContext): string {
           ` : ''}
           ${state.prestigeLifetime > 0 ? `
             <div class="resource prestige">
-              <span>${theme.prestige.currencyIcon}</span>
+              <span class="row-seal">${renderSeal(theme.prestige.currencyIcon)}</span>
               <div class="prestige-resource-meta">
                 <span class="resource-value" data-bind="prestige-balance">${state.prestigePoints}</span>
                 <span class="resource-label">${ui.prestigeBalance}</span>
@@ -536,13 +544,13 @@ function buildHTML(ctx: RenderContext): string {
           </div>
           <div class="social-bar">
             ${lootWorkshopAvailable(state, theme) ? `
-              <button class="btn btn-sm btn-social btn-loot-workshop" data-action="open-loot-workshop" type="button">🧲 ${ui.zoneLootWorkshop}</button>
+              <button class="btn btn-sm btn-social btn-loot-workshop" data-action="open-loot-workshop" type="button">${ui.zoneLootWorkshop}</button>
             ` : ''}
-            ${(theme.prestigeShop?.length ?? 0) > 0 && state.prestigeLifetime > 0 ? `
-              <button class="btn btn-sm btn-social btn-prestige-shop" data-action="open-prestige-shop" type="button">🏛️ ${ui.prestigeShop}</button>
+            ${(theme.prestigeShop?.length ?? 0) > 0 ? `
+              <button class="btn btn-sm btn-social btn-prestige-shop ${state.prestigeLifetime > 0 ? '' : 'is-preview'}" data-action="open-prestige-shop" type="button">${ui.prestigeShop}</button>
             ` : ''}
-            <button class="btn btn-sm btn-social" data-action="open-leaderboard" type="button">🏆 ${ui.leaderboard}</button>
-            <button class="btn btn-sm btn-social profile-chip" data-action="open-profile" type="button" data-bind="username">👤 ${ctx.displayUsername}</button>
+            <button class="btn btn-sm btn-social" data-action="open-leaderboard" type="button">${ui.leaderboard}</button>
+            <button class="btn btn-sm btn-social profile-chip" data-action="open-profile" type="button" data-bind="username">${ctx.displayUsername}</button>
           </div>
         </div>
       </header>
@@ -558,9 +566,9 @@ function buildHTML(ctx: RenderContext): string {
 
       <main class="main-grid">
         <section class="panel zone-panel">
-          <h2>📍 ${ui.activeZone}</h2>
+          <h2>${ui.activeZone}</h2>
           <div class="zone-current">
-            <span class="zone-icon">${zone.icon}</span>
+            <span class="zone-icon">${renderSeal(zone.icon)}</span>
             <div>
               <strong>${zoneLoc?.name ?? zone.name}</strong>
               <p>${zoneLoc?.description ?? zone.description}</p>
@@ -576,7 +584,7 @@ function buildHTML(ctx: RenderContext): string {
             </div>
           ` : `
             <button class="btn btn-accent btn-block" data-tutorial-target="start-quest" data-action="start-quest" ${state.parties.every(p => p.level === 0) ? 'disabled' : ''}>
-              ⚔️ ${ui.sendQuest}
+              ${ui.sendQuest}
             </button>
           `}
           <div class="zone-list">
@@ -588,9 +596,9 @@ function buildHTML(ctx: RenderContext): string {
               const zoneCanUnlock = canUnlockZone(state, z.id, theme);
               return `
                 <div class="zone-item ${active ? 'active' : ''} ${onQuestHere ? 'on-quest' : ''} ${unlocked ? '' : 'locked'}" data-zone-item="${z.id}">
-                  <span>${z.icon}</span>
+                  <span class="row-seal">${renderSeal(z.icon)}</span>
                   <span>${zLoc?.name ?? z.name}</span>
-                  ${onQuestHere ? `<span class="badge quest-badge">⚔️</span>` : active ? `<span class="badge">${ui.active}</span>` : ''}
+                  ${onQuestHere ? `<span class="badge quest-badge">${ui.onQuestBadge}</span>` : active ? `<span class="badge">${ui.active}</span>` : ''}
                   <span class="zone-actions" data-zone-actions="${z.id}">
                     ${!unlocked
                       ? `<button class="btn btn-sm ${zoneCanUnlock ? 'btn-ready' : 'disabled'}"
@@ -611,7 +619,7 @@ function buildHTML(ctx: RenderContext): string {
         </section>
 
         <section class="panel ledger-panel">
-          <h2>📒 ${ui.ledger}</h2>
+          <h2>${ui.ledger}</h2>
           <div class="ledger-log">
             ${engine.eventLog.length === 0
               ? `<p class="ledger-empty">${ui.ledgerEmpty}</p>`
@@ -627,7 +635,7 @@ function buildHTML(ctx: RenderContext): string {
 
         <section class="panel party-panel">
           <div class="panel-title-row">
-            <h2>👥 ${ui.parties}</h2>
+            <h2>${ui.parties}</h2>
             <span class="scroll-hint">${ui.partiesScrollHint}</span>
           </div>
           <div class="item-list party-list" data-scroll-panel="parties">
@@ -641,14 +649,14 @@ function buildHTML(ctx: RenderContext): string {
               return `
                 <div class="item-card ${unlocked ? '' : 'locked'} ${isNext ? 'next-buy' : ''}" data-party-card="${def.id}">
                   <div class="item-header">
-                    <span class="item-icon">${def.icon}</span>
+                    <span class="item-icon">${renderSeal(def.icon)}</span>
                     <div>
                       <strong>${pLoc?.name ?? def.name}</strong>
                       <span class="item-level">Lv ${party.level}</span>
                     </div>
                     <span class="item-dps">${party.level > 0 ? formatNumber(def.baseDps * party.level) : '—'} DPS</span>
                   </div>
-                  <p class="item-desc">${pLoc?.description ?? def.description}</p>
+                  <p class="item-desc ${unlocked ? '' : 'is-redacted'}">${unlocked ? (pLoc?.description ?? def.description) : ''}</p>
                   ${unlocked ? `
                     <div class="buy-row">
                       <button class="btn btn-sm ${canAfford ? 'btn-ready' : 'disabled'}"
@@ -668,7 +676,7 @@ function buildHTML(ctx: RenderContext): string {
 
         <section class="panel upgrade-panel">
           <div class="panel-title-row">
-            <h2>📈 ${ui.investments}</h2>
+            <h2>${ui.investments}</h2>
             <span class="scroll-hint">${ui.investmentsScrollHint}</span>
           </div>
           <div class="item-list upgrade-list">
@@ -683,7 +691,7 @@ function buildHTML(ctx: RenderContext): string {
               return `
                 <div class="item-card ${isNext ? 'next-buy' : ''}" data-upgrade-card="${def.id}">
                   <div class="item-header">
-                    <span class="item-icon">${def.icon}</span>
+                    <span class="item-icon">${renderSeal(def.icon)}</span>
                     <div>
                       <strong>${uLoc?.name ?? def.name}</strong>
                       <span class="item-level">${up.level}/${def.maxLevel}</span>
@@ -718,7 +726,7 @@ function buildHTML(ctx: RenderContext): string {
         <div class="footer-actions" data-bind="footer-actions">
           ${prestigeReady ? `
             <button class="btn btn-prestige" data-action="prestige">
-              ${theme.prestige.currencyIcon} ${ui.prestige} (+${prestigePts})
+              ${renderSeal(theme.prestige.currencyIcon, 'seal-inline')} ${ui.prestige} (+${prestigePts})
             </button>
           ` : `
             <span class="prestige-hint" data-bind="prestige-hint">${ui.prestige}: ${formatNumber(theme.prestige.minGoldEarned)} ${ui.prestigeNeed}${state.totalGoldEarned < theme.prestige.minGoldEarned ? ` · ${affordHintText(state.totalGoldEarned, theme.prestige.minGoldEarned, baseGps, ui, onQuest, true)}` : ''}</span>
@@ -739,7 +747,7 @@ function setText(el: Element | null, text: string): void {
 function patchDynamic(root: HTMLElement, ctx: RenderContext): void {
   const { state, theme, ui, baseGps, gps, clickStatus, onQuest, nextBuyId } = ctx;
 
-  setText(root.querySelector('[data-bind="username"]'), `👤 ${ctx.displayUsername}`);
+  setText(root.querySelector('[data-bind="username"]'), ctx.displayUsername);
 
   setText(root.querySelector('[data-bind="gold"]'), formatNumber(state.gold));
 
@@ -960,6 +968,7 @@ export function mountGameUI(
   options: GameUIOptions,
 ): TutorialManager {
   const { localeManager, getLocale, getDisplayUsername } = options;
+  ensureSealSprite();
   root.className = 'game-root';
   const tutorial = new TutorialManager(engine.theme.id, getLocale().tutorial);
   let wasOnQuest = false;

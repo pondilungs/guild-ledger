@@ -89,6 +89,7 @@ export interface GameLocale {
     lootCraftsInto: string;
     lootDropsIn: string;
     lootWorkshopScrollHint: string;
+    onQuestBadge: string;
   };
   zones: Record<string, LocalizedEntity>;
   parties: Record<string, LocalizedEntity>;

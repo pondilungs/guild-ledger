@@ -52,9 +52,10 @@ export function renderProfileContent(
   isSelf: boolean,
 ): string {
   const s = profile.stats;
+  const initial = (profile.username[0] ?? '?').toUpperCase();
   return `
     <div class="profile-header">
-      <span class="profile-avatar">📒</span>
+      <span class="profile-avatar">${initial}</span>
       <div>
         <h3 class="profile-name">${profile.username}</h3>
         ${isSelf ? `<span class="profile-badge">${ui.myProfile}</span>` : ''}

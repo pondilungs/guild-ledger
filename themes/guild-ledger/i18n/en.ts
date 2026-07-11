@@ -199,6 +199,7 @@ export const en: GameLocale = {
     lootCraftsInto: 'Crafts into',
     lootDropsIn: 'Drops in',
     lootWorkshopScrollHint: '↓ Scroll for all zones',
+    onQuestBadge: 'On Quest',
   },
   zones: {
     rat_cellar: { name: 'Rat Cellar', description: 'Cheap deaths for fresh adventurers.' },
@@ -246,6 +247,10 @@ export const en: GameLocale = {
     night_audit: { name: 'Night Audit', description: 'Permanent +6% offline earnings' },
     tenant_insurance: { name: 'Tenant Insurance', description: 'Permanent -2% death chance' },
     opening_balance: { name: 'Opening Balance', description: '+30 starting gold after prestige' },
+    veteran_crew: { name: 'Veteran Crew', description: "Permanent +5% DPS. They don't know how to file a lawsuit." },
+    compound_reputation: { name: 'Compound Reputation', description: 'Permanent +5% reputation gain. Interest on interest.' },
+    expedition_bonus: { name: 'Expedition Bonus', description: 'Permanent +6% quest gold. Not overtime — a bonus.' },
+    legacy_endowment: { name: 'Legacy Endowment', description: 'Permanent +10% gold income. Even your great-grandkid eats off this.' },
   },
   flavor: {
     questCompleteMsg: (gold, deaths, zoneName) => {
@@ -317,12 +322,11 @@ export const en: GameLocale = {
     reset: 'Ledger reset. New fiscal year.',
   },
   patchNotes: {
-    headline: 'Zone loot workshop refresh and expedition exploit fix.',
+    headline: 'Reputation Market expanded: 4 new items, showroom layout.',
     items: [
-      'Cleaner loot cards with a clearer shard → gear flow and progress bar',
-      'Zones lock during quests — rewards use the zone you sent from',
-      'Removed the 20 Rep race tab',
-      'Minor fixes and polish',
+      'Reputation Market is now a 2-column catalog: every item gets a REQ number, maxed items get a green "APPROVED" stamp',
+      '4 new permanent perks: Veteran Crew (+DPS), Compound Reputation (+rep gain), Expedition Bonus (+quest gold), Legacy Endowment (+gold, late-game tier)',
+      'The market button is now visible before your first prestige too — see what you\'re saving up for',
     ],
   },
 };

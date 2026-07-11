@@ -1,6 +1,11 @@
 import type { ThemeConfig } from '../config/ThemeSchema.ts';
 import type { GameState } from '../core/types.ts';
-import { getShopDeathReduceBonus, getShopGoldBonus } from './PrestigeShopSystem.ts';
+import {
+  getShopDeathReduceBonus,
+  getShopDpsBonus,
+  getShopGoldBonus,
+  getShopQuestGoldBonus,
+} from './PrestigeShopSystem.ts';
 import {
   getLootCraftDeathReduceBonus,
   getLootCraftDpsBonus,
@@ -16,7 +21,7 @@ export function calcPartyDps(state: GameState, theme: ThemeConfig): number {
     if (!def) continue;
     dps += def.baseDps * party.level;
   }
-  return dps * (getMultiplier(state, theme, 'dps_mult') + getLootCraftDpsBonus(state, theme));
+  return dps * (getMultiplier(state, theme, 'dps_mult') + getLootCraftDpsBonus(state, theme) + getShopDpsBonus(state, theme));
 }
 
 export function calcGoldPerSec(state: GameState, theme: ThemeConfig): number {
@@ -66,7 +71,7 @@ export function rollQuestResult(state: GameState, theme: ThemeConfig): {
     + getLootCraftGoldBonus(state, theme);
   const prestigeMult = 1 + state.prestigeLifetime * theme.prestige.multiplierPerPoint;
   const kills = Math.max(1, Math.floor(dps * questDurationSec / zone.baseEnemyHp));
-  const questMult = 1 + getLootCraftQuestGoldBonus(state, theme);
+  const questMult = 1 + getLootCraftQuestGoldBonus(state, theme) + getShopQuestGoldBonus(state, theme);
   const gold = kills * zone.baseGoldPerKill * goldMult * prestigeMult * 1.65 * questMult;
 
   const deathReduce = getMultiplier(state, theme, 'death_reduce')

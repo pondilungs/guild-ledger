@@ -199,6 +199,7 @@ export const tr: GameLocale = {
     lootCraftsInto: 'Üretir',
     lootDropsIn: 'Düşer',
     lootWorkshopScrollHint: '↓ Kaydır — tüm bölgeler',
+    onQuestBadge: 'Görevde',
   },
   zones: {
     rat_cellar: { name: 'Sıçan Bodrumu', description: 'Yeni maceracılar için ucuz ölüm.' },
@@ -246,6 +247,10 @@ export const tr: GameLocale = {
     night_audit: { name: 'Gece Denetimi', description: 'Kalıcı +%6 offline kazanç' },
     tenant_insurance: { name: 'Kiracı Sigortası', description: 'Kalıcı -%2 ölüm şansı' },
     opening_balance: { name: 'Açılış Bakiyesi', description: 'Prestige sonrası +30 başlangıç altını' },
+    veteran_crew: { name: 'Kıdemli Ekip', description: 'Kalıcı +%5 DPS. Tazminat davası açmayı bilmiyorlar.' },
+    compound_reputation: { name: 'Bileşik İtibar', description: 'Kalıcı +%5 itibar kazancı. Faiz üstüne faiz.' },
+    expedition_bonus: { name: 'Sevkiyat İkramiyesi', description: 'Kalıcı +%6 görev altını. Mesai değil, prim.' },
+    legacy_endowment: { name: 'Miras Vakfı', description: 'Kalıcı +%10 altın geliri. Torununun torunu bile bundan yer.' },
   },
   flavor: {
     questCompleteMsg: (gold, deaths, zoneName) => {
@@ -317,12 +322,11 @@ export const tr: GameLocale = {
     reset: 'Defter sıfırlandı. Yeni mali yıl başladı.',
   },
   patchNotes: {
-    headline: 'Bölge ganimet atölyesi yenilendi ve görev exploit\'i kapatıldı.',
+    headline: 'İtibar Pazarı büyüdü: 4 yeni kalem, showroom düzeni.',
     items: [
-      'Bölge ganimet kartları sadeleştirildi — daha okunaklı akış ve ilerleme çubuğu',
-      'Görev sırasında bölge değiştirilemez, ödül gönderilen bölgeye göre hesaplanır',
-      '20 İtibar yarışı tablosu kaldırıldı',
-      'Küçük düzenlemeler ve hata düzeltmeleri',
+      'İtibar Pazarı artık 2 sütunlu bir katalog: her kalemde REQ numarası, maksimum seviyede yeşil "ONAYLANDI" damgası',
+      '4 yeni kalıcı kalem: Kıdemli Ekip (+DPS), Bileşik İtibar (+itibar kazancı), Sevkiyat İkramiyesi (+görev altını), Miras Vakfı (+altın, üst seviye)',
+      'Pazar butonu artık ilk prestige\'den önce de görünüyor — ne biriktirdiğini önceden gör',
     ],
   },
 };

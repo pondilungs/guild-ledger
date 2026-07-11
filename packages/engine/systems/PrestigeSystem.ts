@@ -1,12 +1,12 @@
 import type { ThemeConfig } from '../config/ThemeSchema.ts';
 import type { GameState } from '../core/types.ts';
 import { createInitialState } from '../core/types.ts';
-import { getShopStartingGoldBonus } from './PrestigeShopSystem.ts';
+import { getShopPrestigeBonus, getShopStartingGoldBonus } from './PrestigeShopSystem.ts';
 
 export function calcPrestigePoints(state: GameState, theme: ThemeConfig): number {
   if (state.totalGoldEarned < theme.prestige.minGoldEarned) return 0;
   const base = Math.floor(Math.sqrt(state.totalGoldEarned / theme.prestige.minGoldEarned));
-  const prestigeMult = 1 + getPrestigeUpgradeBonus(state, theme);
+  const prestigeMult = 1 + getPrestigeUpgradeBonus(state, theme) + getShopPrestigeBonus(state, theme);
   return Math.floor(base * prestigeMult);
 }
 

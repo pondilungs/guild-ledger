@@ -41,6 +41,18 @@ export function getShopStartingGoldBonus(state: GameState, theme: ThemeConfig): 
   return Math.floor(shopEffect(state, theme, 'start_gold_perm'));
 }
 
+export function getShopDpsBonus(state: GameState, theme: ThemeConfig): number {
+  return shopEffect(state, theme, 'dps_mult_perm');
+}
+
+export function getShopPrestigeBonus(state: GameState, theme: ThemeConfig): number {
+  return shopEffect(state, theme, 'prestige_mult_perm');
+}
+
+export function getShopQuestGoldBonus(state: GameState, theme: ThemeConfig): number {
+  return shopEffect(state, theme, 'quest_gold_perm');
+}
+
 export function canBuyShopItem(
   state: GameState,
   theme: ThemeConfig,

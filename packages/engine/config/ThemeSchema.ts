@@ -51,7 +51,10 @@ export type PrestigeShopEffectType =
   | 'gold_mult_perm'
   | 'offline_mult_perm'
   | 'death_reduce_perm'
-  | 'start_gold_perm';
+  | 'start_gold_perm'
+  | 'dps_mult_perm'
+  | 'prestige_mult_perm'
+  | 'quest_gold_perm';
 
 export interface PrestigeShopItemDef {
   id: string;
