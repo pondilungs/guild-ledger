@@ -67,6 +67,17 @@ function createFileStore() {
       if (!profile) return false;
       return this.deleteProfile(profile.id);
     },
+    async transferProfile(fromUsername, toUsername) {
+      const db = readFileDb();
+      const from = Object.values(db.profiles).find((p) => p.username === fromUsername);
+      const to = Object.values(db.profiles).find((p) => p.username === toUsername);
+      if (!from || !to) return null;
+      to.stats = from.stats;
+      to.updatedAt = Date.now();
+      delete db.profiles[from.id];
+      writeFileDb(db);
+      return to;
+    },
     async wipeAllProfiles() {
       const db = readFileDb();
       const profileCount = Object.keys(db.profiles).length;
@@ -127,6 +138,16 @@ async function createMongoStore(uri) {
       const profile = await col.findOne({ username });
       if (!profile) return false;
       return this.deleteProfile(profile.id);
+    },
+    async transferProfile(fromUsername, toUsername) {
+      const from = await col.findOne({ username: fromUsername });
+      const to = await col.findOne({ username: toUsername });
+      if (!from || !to) return null;
+      const updated = { ...to, stats: from.stats, updatedAt: Date.now() };
+      await col.replaceOne({ id: to.id }, updated);
+      await col.deleteOne({ id: from.id });
+      await raceCol.deleteOne({ id: from.id });
+      return updated;
     },
     async wipeAllProfiles() {
       const [profileResult, raceResult] = await Promise.all([

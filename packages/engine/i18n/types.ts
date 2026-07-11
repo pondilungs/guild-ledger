@@ -33,6 +33,12 @@ export interface GameLocale {
     prestige: string;
     prestigeNeed: string;
     reset: string;
+    exportSave: string;
+    importSave: string;
+    exportSavePrompt: string;
+    importSavePrompt: string;
+    importSaveSuccess: string;
+    importSaveError: string;
     unlock: string;
     select: string;
     active: string;

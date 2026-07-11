@@ -731,6 +731,8 @@ function buildHTML(ctx: RenderContext): string {
           ` : `
             <span class="prestige-hint" data-bind="prestige-hint">${ui.prestige}: ${formatNumber(theme.prestige.minGoldEarned)} ${ui.prestigeNeed}${state.totalGoldEarned < theme.prestige.minGoldEarned ? ` · ${affordHintText(state.totalGoldEarned, theme.prestige.minGoldEarned, baseGps, ui, onQuest, true)}` : ''}</span>
           `}
+          <button class="btn btn-sm" data-action="export-save">${ui.exportSave}</button>
+          <button class="btn btn-sm" data-action="import-save">${ui.importSave}</button>
           <button class="btn btn-danger btn-sm" data-action="reset">${ui.reset}</button>
         </div>
       </footer>
@@ -1061,6 +1063,29 @@ export function mountGameUI(
           patchNotesKeyRef.key = '';
         }
         break;
+      case 'export-save': {
+        const data = engine.exportSave();
+        if (data) prompt(ui.exportSavePrompt, data);
+        break;
+      }
+      case 'import-save': {
+        const raw = prompt(ui.importSavePrompt);
+        if (!raw) break;
+        if (engine.importSave(raw)) {
+          tutorial.reset();
+          wasOnQuest = false;
+          prestigeShopOpen = false;
+          lootWorkshopOpen = false;
+          patchNotesOpen = false;
+          shopKeyRef.key = '';
+          lootKeyRef.key = '';
+          patchNotesKeyRef.key = '';
+          alert(ui.importSaveSuccess);
+        } else {
+          alert(ui.importSaveError);
+        }
+        break;
+      }
       case 'open-prestige-shop':
         prestigeShopOpen = true;
         lootWorkshopOpen = false;

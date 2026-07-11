@@ -64,9 +64,7 @@ export function migrateState(state: GameState, theme: ThemeConfig): GameState {
   };
 }
 
-export function loadGame(theme: ThemeConfig): GameState | null {
-  const raw = localStorage.getItem(SAVE_KEY);
-  if (!raw) return null;
+function parseSave(raw: string, theme: ThemeConfig): GameState | null {
   try {
     const parsed = JSON.parse(raw) as { themeId: string; state: GameState };
     if (parsed.themeId !== theme.id || parsed.state.version !== SAVE_VERSION) {
@@ -76,6 +74,12 @@ export function loadGame(theme: ThemeConfig): GameState | null {
   } catch {
     return null;
   }
+}
+
+export function loadGame(theme: ThemeConfig): GameState | null {
+  const raw = localStorage.getItem(SAVE_KEY);
+  if (!raw) return null;
+  return parseSave(raw, theme);
 }
 
 export function resetGame(theme: ThemeConfig): GameState {
@@ -92,4 +96,11 @@ export function resetGame(theme: ThemeConfig): GameState {
 
 export function exportSave(): string | null {
   return localStorage.getItem(SAVE_KEY);
+}
+
+export function importSave(raw: string, theme: ThemeConfig): GameState | null {
+  const state = parseSave(raw, theme);
+  if (!state) return null;
+  saveGame(state, theme.id);
+  return state;
 }

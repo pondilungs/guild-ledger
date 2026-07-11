@@ -1,7 +1,13 @@
 import type { ThemeConfig } from './config/ThemeSchema.ts';
 import { GameLoop } from './core/GameLoop.ts';
 import { calcOfflineEarnings } from './core/OfflineCalc.ts';
-import { saveGame, loadGame, resetGame } from './core/SaveManager.ts';
+import {
+  saveGame,
+  loadGame,
+  resetGame,
+  exportSave as exportSaveData,
+  importSave as importSaveData,
+} from './core/SaveManager.ts';
 import type { GameState } from './core/types.ts';
 import { createInitialState } from './core/types.ts';
 import { trackEvent, checkDayReturn } from './core/Analytics.ts';
@@ -390,6 +396,25 @@ export class GameEngine {
     this.lastTapGold = 0;
     this.log(this.getLocale().logs.reset, 'neutral');
     this.notify();
+  }
+
+  exportSave(): string | null {
+    this.persistNow();
+    return exportSaveData();
+  }
+
+  importSave(raw: string): boolean {
+    const state = importSaveData(raw, this.theme);
+    if (!state) return false;
+    this.state = state;
+    this.offlineEarnings = null;
+    this.eventLog = [];
+    this.clickBoostLeft = 0;
+    this.clickCooldownLeft = 0;
+    this.lastTapGold = 0;
+    this.log(this.getLocale().logs.welcomeBack, 'neutral');
+    this.notify();
+    return true;
   }
 
   private addGold(amount: number): void {
